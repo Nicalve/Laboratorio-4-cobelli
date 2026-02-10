@@ -6,7 +6,7 @@ Created on Tue Feb 10 09:06:36 2026
 @author: nclotta
 """
 
-# Time-stamp: </Users/nclotta/Laboratorio-4-cobelli/Clase 5/medicion.py, 2026-02-10 Tuesday 09:52:59 nclotta>
+# Time-stamp: </Users/nclotta/Laboratorio-4-cobelli/Clase 5/medicion.py, 2026-02-10 Tuesday 09:55:26 nclotta>
 
 import numpy as np
 import pandas as pd
@@ -14,7 +14,7 @@ import time
 import matplotlib.pyplot as plt
 import datetime
 
-import SR830
+from SR830 import SR830
 
 lockin = SR830("GPIB0::8::INSTR")
 
