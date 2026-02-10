@@ -105,9 +105,10 @@ def guardar_datos(x, y, labels=["X", "Y"], filename=""):
 
 def run(num=200):
     for i in range(1,10):
-        x, y = xy(lockin, num)
-        LLL = 51_5
-        guardar_datos(x, y, filename=f"run_L{LLL}cm_{i}")
+        x, y = xy(lockin, num, freq=1500, time_constant=7)
+        LLL = "26"
+        #guardar_datos(x, y, filename=f"run_L{LLL}cm_{i}")
+        guardar_datos(x, y, filename=f"run_{i}_tc7")
         print(f"Run {i} completed")
         time.sleep(10)
 
@@ -117,7 +118,9 @@ def hallar_time_const_ideal():
         print(f"Time constant {i}: std(x) = {np.std(x)}")
         guardar_datos(x, y, filename=f"tc_{i}_std_{np.std(x)}")
 
-run()
+
+if __name__ == "__main__":
+    run()
 
 # eof
 
