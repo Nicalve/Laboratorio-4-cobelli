@@ -74,9 +74,9 @@ def resistividad(r0):
     return res_cable(r0) * ((0.0004)**2 * np.pi) / (0.85*2)
 
 
-def xy(lockin, N=10, freq=1500):
-    lockin._lockin.write("OFLT 9")
-    lockin._lockin.write("OFSL 2")
+def xy(lockin, N=10, freq=1500, time_constant=6):
+    lockin._lockin.write("OFLT {0:f}".format(time_constant))
+    lockin._lockin.write("OFSL 3")
     lockin._lockin.write("SLVL {0:f}".format(voltaje))
     
     waitt = lockin.time_constant_values[lockin.get_time_constant()] * 5
@@ -98,10 +98,21 @@ def xy(lockin, N=10, freq=1500):
 
 
 def guardar_datos(x, y, labels=["X", "Y"], filename=""):
-    df = pd.DataFrame([x, y])
-    df.columns = labels
+    df = pd.DataFrame([x, y], labels)
     df.to_csv(filename +
-                  f'_{datetime.datetime.fromtimestamp(time.time()).strftime("%d_%H_%M_%S")}.csv',
+                  f'_xy_{datetime.datetime.fromtimestamp(time.time()).strftime("%d_%H_%M_%S")}.csv',
                   index=False)
+
+
+def run(num=200):
+    x, y = xy(lockin, num)
+    guardar_datos(x, y)
+
+
+def hallar_time_const_ideal():
+    num_med = [400, 400, 400, 300, 300, 200, 200, 50, 15, 10]
+    for i in range(9):
+        x, y = xy(lockin, num=num_med[i], time_constant=i)
+        np.std(x)
     
 # eof
