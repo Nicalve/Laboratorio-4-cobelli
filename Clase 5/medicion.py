@@ -6,7 +6,7 @@ Created on Tue Feb 10 09:06:36 2026
 @author: nclotta
 """
 
-# Time-stamp: </Users/nclotta/Laboratorio-4-cobelli/Clase 5/medicion.py, 2026-02-10 Tuesday 10:18:38 nclotta>
+# Time-stamp: </Users/nclotta/Laboratorio-4-cobelli/Clase 5/medicion.py, 2026-02-10 Tuesday 10:35:13 nclotta>
 
 import numpy as np
 import pandas as pd
@@ -81,7 +81,8 @@ def xy(lockin, N=10, freq=1500):
     
     waitt = lockin.time_constant_values[lockin.get_time_constant()] * 5
     
-    r0 = np.array([])
+    x = np.array([])
+    y = np.array([])
     
     lockin._lockin.write("FMOD 1")
     lockin._lockin.write("FREQ {0:f}".format(freq))
@@ -90,8 +91,10 @@ def xy(lockin, N=10, freq=1500):
     for i in range(N):
         time.sleep(waitt)
         lockin.auto_scale()
-        r0 = np.append(r0, lockin.get_medicion())
-    return r0
+        ret = lockin.get_medicion()
+        x = np.append(x, ret[0])
+        y = np.append(y, ret[1])
+    return x, y
 
 
 def guardar_datos(x, y, labels=["X", "Y"], filename=""):
