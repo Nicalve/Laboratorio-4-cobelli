@@ -6,7 +6,7 @@ Created on Tue Feb 10 09:06:36 2026
 @author: nclotta
 """
 
-# Time-stamp: </Users/nclotta/Laboratorio-4-cobelli/Clase 5/medicion.py, 2026-02-10 Tuesday 09:55:26 nclotta>
+# Time-stamp: </Users/nclotta/Laboratorio-4-cobelli/Clase 5/medicion.py, 2026-02-10 Tuesday 10:06:56 nclotta>
 
 import numpy as np
 import pandas as pd
@@ -16,7 +16,7 @@ import datetime
 
 from SR830 import SR830
 
-lockin = SR830("GPIB0::8::INSTR")
+lockin = SR830("GPIB0::3::INSTR")
 
 voltaje = 0.5
 
@@ -93,7 +93,7 @@ def medicion_xy(lockin, N=10, freq=1500):
     return r0
 
 
-def guardar_datos(x, y, labels=["X", "Y"], filename="")
+def guardar_datos(x, y, labels=["X", "Y"], filename=""):
     df = pd.DataFrame
     df.columns = labels
     df.to_csv(filename +
