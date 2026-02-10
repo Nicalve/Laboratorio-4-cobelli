@@ -6,7 +6,7 @@ Created on Tue Feb 10 09:06:36 2026
 @author: nclotta
 """
 
-# Time-stamp: </Users/nclotta/Laboratorio-4-cobelli/Clase 5/medicion.py, 2026-02-10 Tuesday 10:18:02 nclotta>
+# Time-stamp: </Users/nclotta/Laboratorio-4-cobelli/Clase 5/medicion.py, 2026-02-10 Tuesday 10:18:38 nclotta>
 
 import numpy as np
 import pandas as pd
@@ -20,7 +20,7 @@ lockin = SR830("GPIB0::3::INSTR")
 
 voltaje = 0.5
 
-def medicion(lockin, num=20, minf=200, maxf=100000, plot=False):
+def frecuencias(lockin, num=20, minf=200, maxf=100000, plot=False):
     lockin.auto_scale()
     lockin.get_medicion(isXY=True)
     lockin.set_time_constant(10)
@@ -43,7 +43,7 @@ def medicion(lockin, num=20, minf=200, maxf=100000, plot=False):
 
     
 
-def medicion_polares(lockin, N=10, freq=1500):
+def polares(lockin, N=10, freq=1500):
     lockin._lockin.write("OFLT 10")
     lockin._lockin.write("OFSL 2")
     lockin._lockin.write("SLVL {0:f}".format(voltaje))
@@ -74,7 +74,7 @@ def resistividad(r0):
     return res_cable(r0) * ((0.0004)**2 * np.pi) / (0.85*2)
 
 
-def medicion_xy(lockin, N=10, freq=1500):
+def xy(lockin, N=10, freq=1500):
     lockin._lockin.write("OFLT 9")
     lockin._lockin.write("OFSL 2")
     lockin._lockin.write("SLVL {0:f}".format(voltaje))
