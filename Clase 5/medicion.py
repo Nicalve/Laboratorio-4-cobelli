@@ -6,7 +6,7 @@ Created on Tue Feb 10 09:06:36 2026
 @author: nclotta
 """
 
-# Time-stamp: </Users/nclotta/Laboratorio-4-cobelli/Clase 5/medicion.py, 2026-02-10 Tuesday 10:35:13 nclotta>
+# Time-stamp: </Users/nclotta/Laboratorio-4-cobelli/Clase 5/medicion.py, 2026-02-10 Tuesday 10:45:07 nclotta>
 
 import numpy as np
 import pandas as pd
@@ -98,7 +98,7 @@ def xy(lockin, N=10, freq=1500):
 
 
 def guardar_datos(x, y, labels=["X", "Y"], filename=""):
-    df = pd.DataFrame
+    df = pd.DataFrame([x, y])
     df.columns = labels
     df.to_csv(filename +
                   f'_{datetime.datetime.fromtimestamp(time.time()).strftime("%d_%H_%M_%S")}.csv',

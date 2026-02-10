@@ -2,3 +2,4 @@
 run.py
 *.cpython*
 __pychache__/
+^_*.csv$
