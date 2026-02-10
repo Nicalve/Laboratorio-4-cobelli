@@ -110,9 +110,11 @@ def run(num=200):
 
 
 def hallar_time_const_ideal():
-    num_med = [400, 400, 400, 300, 300, 200, 200, 50, 15, 10]
+    num_med = [40, 40, 40, 30, 30, 50, 25, 20, 15, 10]
     for i in range(9):
-        x, y = xy(lockin, num=num_med[i], time_constant=i)
-        np.std(x)
-    
+        x, y = xy(lockin, N=num_med[i], time_constant=i)
+        print(f"Time constant {i}: std(x) = {np.std(x)}")
+
+
+hallar_time_const_ideal()
 # eof

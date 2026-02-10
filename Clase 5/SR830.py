@@ -100,13 +100,13 @@ class SR830:
             orden += "3, 4" #SNAP? 3, 4
         return self._lockin.query_ascii_values(orden, separator=",")
 
-    def auto_scale(self):
+    def auto_scale(self, debug=False):
         '''
             Utiliza medicion polar (r, angulo)          
             inf_threshold es el porcentaje minimo de la escala  para el cual el
             autoescalado empiza a efectuarse: intenta mantenerse sobre ese rango. valor float de 0 a 1
         '''
-        debug = True
+        
         sup_theshold = 1
         inf_threshold = 0.1        
         nespera = 5 # se recomienda esperar entre 3 y 5 veces el tiempo de medicion entre escalado y medicion        
