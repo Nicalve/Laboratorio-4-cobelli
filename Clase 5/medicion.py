@@ -104,16 +104,43 @@ def guardar_datos(x, y, labels=["X", "Y"], filename=""):
 
 
 def run(num=200):
-    x, y = xy(lockin, num)
-    guardar_datos(x, y)
-
+    for i in range(1,10):
+        x, y = xy(lockin, num)
+        guardar_datos(x, y, filename=f"run_{i}")
+        print(f"Run {i} completed")
+        time.sleep(10)
 
 def hallar_time_const_ideal():
-    for i in range(11):
+    for i in range(9):
         x, y = xy(lockin, N=30, time_constant=i)
         print(f"Time constant {i}: std(x) = {np.std(x)}")
-
+        guardar_datos(x, y, filename=f"tc_{i}_std_{np.std(x)}")
 
 hallar_time_const_ideal()
 
 # eof
+
+""" set 1, no hay data
+Time constant 0: std(x) = 0.012243030227157762
+Time constant 1: std(x) = 0.004229595334437476
+Time constant 2: std(x) = 0.0011578039394674945
+Time constant 3: std(x) = 5.6288395554953464e-05
+Time constant 4: std(x) = 5.768138423220557e-06
+Time constant 5: std(x) = 2.7469702678567327e-06
+Time constant 6: std(x) = 1.649562290023225e-06
+Time constant 7: std(x) = 9.840711499796255e-07
+Time constant 8: std(x) = 5.114412759273759e-07
+Time constant 9: std(x) = 4.133541693135428e-07
+"""
+
+""" set 2, data en archivos segun i
+Time constant 0: std(x) = 0.00802382341020789
+Time constant 1: std(x) = 0.006012090699793326
+Time constant 2: std(x) = 0.0014105612206501753
+Time constant 3: std(x) = 5.6966899806056464e-05
+Time constant 4: std(x) = 5.362318398835422e-06
+Time constant 5: std(x) = 3.4276153851215893e-06
+Time constant 6: std(x) = 1.779805724928676e-06
+Time constant 7: std(x) = 1.1808971849544451e-06
+Time constant 8: std(x) = 5.085500727449456e-07
+"""
