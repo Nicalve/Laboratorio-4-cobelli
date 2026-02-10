@@ -6,7 +6,7 @@ Created on Tue Feb 10 09:06:36 2026
 @author: nclotta
 """
 
-# Time-stamp: </Users/nclotta/Laboratorio-4-cobelli/Clase 5/medicion.py, 2026-02-10 Tuesday 10:06:56 nclotta>
+# Time-stamp: </Users/nclotta/Laboratorio-4-cobelli/Clase 5/medicion.py, 2026-02-10 Tuesday 10:18:02 nclotta>
 
 import numpy as np
 import pandas as pd
@@ -20,7 +20,7 @@ lockin = SR830("GPIB0::3::INSTR")
 
 voltaje = 0.5
 
-def medicion_frecuencias(lockin, minf=200, maxf=100000, num=20):
+def medicion(lockin, num=20, minf=200, maxf=100000, plot=False):
     lockin.auto_scale()
     lockin.get_medicion(isXY=True)
     lockin.set_time_constant(10)
@@ -36,8 +36,9 @@ def medicion_frecuencias(lockin, minf=200, maxf=100000, num=20):
     
         medicion.append(lockin.get_medicion(isXY=True))
         time.sleep(tespera)
-    
-        plt.plot(np.log(frecuencias), [np.abs(medicion[i][0]) for i in range(len(medicion))], 'o-')
+
+        if plot:
+            plt.plot(np.log(frecuencias), [np.abs(medicion[i][0]) for i in range(len(medicion))], 'o-')
     return frecuencias, [np.abs(medicion[i][0]) for i in range(len(medicion))]
 
     
