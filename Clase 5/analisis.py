@@ -6,8 +6,9 @@ Created on Mon Feb  9 18:33:36 2026
 @author: nclotta
 """
 
-# Time-stamp: </Users/nclotta/Documents/__UBA/__LABO_4_CUATRO/informe2/analisis.py, 2026-02-09 Monday 18:43:39 nclotta>
+# Time-stamp: </Users/nclotta/Laboratorio-4-cobelli/Clase 5/analisis.py, 2026-02-10 Tuesday 09:46:57 nclotta>
 
+import medicion
 
 
 

@@ -6,12 +6,13 @@ Created on Tue Feb 10 09:06:36 2026
 @author: nclotta
 """
 
-# Time-stamp: <>
+# Time-stamp: </Users/nclotta/Laboratorio-4-cobelli/Clase 5/medicion.py, 2026-02-10 Tuesday 09:52:59 nclotta>
 
 import numpy as np
 import pandas as pd
 import time
 import matplotlib.pyplot as plt
+import datetime
 
 import SR830
 
@@ -60,14 +61,17 @@ def medicion_polares(lockin, N=10, freq=1500):
         r0[i], tita[i] = lockin.auto_scale()
     return r0, tita
 
+
 def res_cable(r0):
     V_0 = voltaje
     R_res = 1000  # Ohm
     V = np.mean(np.abs(r0))
     return R_res / ((V_0/V)-1)
-    
+
+
 def resistividad(r0):
     return res_cable(r0) * ((0.0004)**2 * np.pi) / (0.85*2)
+
 
 def medicion_xy(lockin, N=10, freq=1500):
     lockin._lockin.write("OFLT 9")
@@ -88,4 +92,12 @@ def medicion_xy(lockin, N=10, freq=1500):
         r0 = np.append(r0, lockin.get_medicion())
     return r0
 
+
+def guardar_datos(x, y, labels=["X", "Y"], filename="")
+    df = pd.DataFrame
+    df.columns = labels
+    df.to_csv(filename +
+                  f'_{datetime.datetime.fromtimestamp(time.time()).strftime("%d_%H_%M_%S")}.csv',
+                  index=False)
+    
 # eof
