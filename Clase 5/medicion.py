@@ -116,7 +116,7 @@ def hallar_time_const_ideal():
         print(f"Time constant {i}: std(x) = {np.std(x)}")
         guardar_datos(x, y, filename=f"tc_{i}_std_{np.std(x)}")
 
-hallar_time_const_ideal()
+run()
 
 # eof
 
