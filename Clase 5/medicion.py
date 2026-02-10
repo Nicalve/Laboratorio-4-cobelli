@@ -106,7 +106,8 @@ def guardar_datos(x, y, labels=["X", "Y"], filename=""):
 def run(num=200):
     for i in range(1,10):
         x, y = xy(lockin, num)
-        guardar_datos(x, y, filename=f"run_{i}")
+        LLL = 51_5
+        guardar_datos(x, y, filename=f"run_L{LLL}cm_{i}")
         print(f"Run {i} completed")
         time.sleep(10)
 
