@@ -6,7 +6,7 @@ Created on Tue Feb 10 09:06:36 2026
 @author: nclotta
 """
 
-# Time-stamp: </Users/nclotta/Laboratorio-4-cobelli/Clase 5/medicion.py, 2026-02-10 Tuesday 10:45:07 nclotta>
+# Time-stamp: </Users/nclotta/Laboratorio-4-cobelli/Clase 5/medicion.py, 2026-02-10 Tuesday 11:54:36 nclotta>
 
 import numpy as np
 import pandas as pd
@@ -59,7 +59,7 @@ def polares(lockin, N=10, freq=1500):
     
     for i in range(N):
         time.sleep(waitt)
-        r0[i], tita[i] = lockin.auto_scale()
+        r0[i], tita[i] = lockin.get_medicion(False)
     return r0, tita
 
 
@@ -90,7 +90,6 @@ def xy(lockin, N=10, freq=1500, time_constant=6):
     
     for i in range(N):
         time.sleep(waitt)
-        lockin.auto_scale()
         ret = lockin.get_medicion()
         x = np.append(x, ret[0])
         y = np.append(y, ret[1])
@@ -110,11 +109,11 @@ def run(num=200):
 
 
 def hallar_time_const_ideal():
-    num_med = [40, 40, 40, 30, 30, 50, 25, 20, 15, 10]
-    for i in range(9):
-        x, y = xy(lockin, N=num_med[i], time_constant=i)
+    for i in range(11):
+        x, y = xy(lockin, N=30, time_constant=i)
         print(f"Time constant {i}: std(x) = {np.std(x)}")
 
 
 hallar_time_const_ideal()
+
 # eof
