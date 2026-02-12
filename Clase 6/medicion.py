@@ -20,10 +20,10 @@ lockin = SR830("GPIB0::8::INSTR")
 
 voltaje = 0.5
 
-def frecuencias(lockin, num=20, minf=200, maxf=100000, plot=False):
+def frecuencias(lockin, num=60, minf=200, maxf=100000, plot=False):
     lockin.auto_scale()
     lockin.get_medicion(isXY=True)
-    lockin.set_time_constant(10)
+    lockin.set_time_constant(7)
     
     frecuencias = np.geomspace(minf, maxf, num)
     medicion = []
@@ -31,17 +31,26 @@ def frecuencias(lockin, num=20, minf=200, maxf=100000, plot=False):
     tespera = lockin.time_constant_values[lockin.time_constant] * nespera
     
     for freq in frecuencias:
+        print(f"Freq: {freq} Hz")
         lockin.set_referencia(isIntern=True, freq=freq, voltaje=0.5)
         lockin.auto_scale()
     
         medicion.append(lockin.get_medicion(isXY=True))
         time.sleep(tespera)
 
-        if plot:
-            plt.plot(np.log(frecuencias), [np.abs(medicion[i][0]) for i in range(len(medicion))], 'o-')
-    return frecuencias, [np.abs(medicion[i][0]) for i in range(len(medicion))]
+    if plot:
+        datosx=[]
+        datosy=[]
+        # for i in range(len(medicion)):
+        #     datosx.append(np.abs(medicion[i][0]))
+        
+        plt.plot(np.log(frecuencias), np.array([medicion[i][0] for i in range(len(medicion))]), 'o-')
+        plt.show()
+        plt.plot(np.log(frecuencias), np.array([medicion[i][1] for i in range(len(medicion))]), 'o-')
+        plt.show()
+        
+    return frecuencias, [medicion[i][0] for i in range(len(medicion))], [medicion[i][1] for i in range(len(medicion))]
 
-    
 
 def polares(lockin, N=10, freq=1500):
     lockin._lockin.write("OFLT 10")
@@ -106,10 +115,10 @@ def guardar_datos(x, y, labels=["X", "Y"], filename=""):
 
 def run(num=200):
     for i in range(1,10):
-        x, y = xy(lockin, num, freq=1500, time_constant=7)
+        x, y = xy(lockin, num, freq=30000, time_constant=7)
         LLL = "26"
         #guardar_datos(x, y, filename=f"run_L{LLL}cm_{i}")
-        guardar_datos(x, y, filename=f"run_L_135_0_{i}_tc7")
+        guardar_datos(x, y, filename=f"inductancia_30k_{i}_tc7")
         print(f"Run {i} completed")
         time.sleep(10)
 
@@ -120,10 +129,19 @@ def hallar_time_const_ideal():
         guardar_datos(x, y, filename=f"tc_{i}_std_{np.std(x)}")
 
 
-if __name__ == "__main__":
-    run()
+def run_freq():
+    print("Iniciando barrido de frecuencias...")
+    f, x, y = frecuencias(lockin, plot=False)
+    df = pd.DataFrame([x, y, f], ["X", "Y", "f"])
+    df.to_csv("barrido_frecuencias_cobre" +
+                  f'_xy_{datetime.datetime.fromtimestamp(time.time()).strftime("%d_%H_%M_%S")}.csv',
+                  index=False)
 
-# eof
+if __name__ == "__main__":
+    for i in range(6):
+        run_freq()
+        time.sleep(2)
+
 
 """ set 1, no hay data
 Time constant 0: std(x) = 0.012243030227157762
