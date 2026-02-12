@@ -27,9 +27,9 @@ class SR830:
         self.scale = self.get_scale()
         self.time_constant = self.get_time_constant()
 
-    def __del__(self):
-        self._lockin.write("LOCL 0") #Desbloquea el Lockin
-        self._lockin.close()
+    # def __del__(self):
+    #     self._lockin.write("LOCL 0") #Desbloquea el Lockin
+    #     self._lockin.close()
 
     def set_modo(self, modo):
         '''Selecciona el modo de medición, A, A-B, I, I(10M)'''

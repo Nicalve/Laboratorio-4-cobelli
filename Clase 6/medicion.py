@@ -16,7 +16,7 @@ import datetime
 
 from SR830 import SR830
 
-lockin = SR830("GPIB0::3::INSTR")
+lockin = SR830("GPIB0::8::INSTR")
 
 voltaje = 0.5
 
@@ -88,6 +88,7 @@ def xy(lockin, N=10, freq=1500, time_constant=6):
     lockin._lockin.write("FREQ {0:f}".format(freq))
     lockin.auto_scale()
     
+    print("Tomando datos...")
     for i in range(N):
         time.sleep(waitt)
         ret = lockin.get_medicion()
@@ -108,7 +109,7 @@ def run(num=200):
         x, y = xy(lockin, num, freq=1500, time_constant=7)
         LLL = "26"
         #guardar_datos(x, y, filename=f"run_L{LLL}cm_{i}")
-        guardar_datos(x, y, filename=f"run_{i}_tc7")
+        guardar_datos(x, y, filename=f"run_L_18_7_{i}_tc7")
         print(f"Run {i} completed")
         time.sleep(10)
 

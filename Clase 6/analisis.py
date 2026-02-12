@@ -28,17 +28,17 @@ def resistividad(r0, L):
     return res_cable(r0) * ((0.0004)**2 * np.pi) / (0.85*2-L)
 #[0, "time cte"],
 #datos_segun_L = [[0.26, "L26"], [0, "run_xy"], [0.26, "L26_1"]]
-datos_segun_L = [[0, "xy_tc7"]]
-
+#datos_segun_L = [[0, "xy_tc7"]]
+datos_segun_L = [[0.12_1, "L_12_1"]]
 for i, dtl in enumerate(datos_segun_L):
-    directory_path = Path("./Clase 5/" + dtl[1])
+    directory_path = Path("./datos_exp2/" + dtl[1])
     files = [item for item in directory_path.iterdir() if item.is_file()]
     res = []
     for file_path in files:
         df = pd.read_csv(file_path)
         df=df.T
-        print(f"{np.mean(df[0])} {np.std(df[0])}")
-        print(f"R={res_cable(df[0])}, c = {resistividad(df[0], dtl[0])}")
+        print(f"<X> = {np.mean(df[0])}, sigma_X = {np.std(df[0])}")
+        print(f"R={res_cable(df[0])}, rho = {resistividad(df[0], dtl[0])}")
     #    res.append(res_cable(df[0]))
     #print(f"Promedio R para {dtl[1]}: {np.mean(res)}, c = {resistividad(np.mean(res), 0)}")
 
