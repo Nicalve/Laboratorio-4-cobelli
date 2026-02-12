@@ -109,7 +109,7 @@ def run(num=200):
         x, y = xy(lockin, num, freq=1500, time_constant=7)
         LLL = "26"
         #guardar_datos(x, y, filename=f"run_L{LLL}cm_{i}")
-        guardar_datos(x, y, filename=f"run_L_18_7_{i}_tc7")
+        guardar_datos(x, y, filename=f"run_L_135_0_{i}_tc7")
         print(f"Run {i} completed")
         time.sleep(10)
 
