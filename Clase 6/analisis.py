@@ -138,8 +138,8 @@ print("\nDispersión mínima:", mejor_disp)
 
 
 
-# eof
-=======
+
+
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
