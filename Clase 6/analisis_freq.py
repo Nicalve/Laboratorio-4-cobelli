@@ -7,11 +7,14 @@ import matplotlib.pyplot as plt
 
 ROOT = Path(r"C:\Users\User\Desktop\Laboratorio-4-cobelli")
 
-def Y_material(ω, μ_r, N=14, D=0.2125, d=0.0008):
+def Y_material(ω, μ_r):
     """
     Cuidado esto esta en metros
     """
-    termino_geometrico = N**2 * (np.log(8*D/d) - 2)
+    N=14
+    D=0.2125
+    d=0.0008
+    termino_geometrico = N**2 * (np.log(8*D/d) - 2) * (D / 2 )
     return ω * μ_r * termino_geometrico
 
 # Lista de subcarpetas y etiquetas
@@ -45,7 +48,6 @@ for subpath, label in zip(subpaths, labels):
             print(f"Procesando {archivo} en {subpath}")
             df = df.T
             df.columns = ["X", "Y", "Freq"]
-            
             # Almacenar los datos en las listas correspondientes
             datos_X[contador] = df["X"].tolist()
             datos_Y[contador] = df["Y"].tolist()
@@ -53,18 +55,15 @@ for subpath, label in zip(subpaths, labels):
             
             contador += 1
     
-    # Asumir que todos los archivos tienen la misma longitud
+    # Todos los archivos tienen la misma longitud
     N = len(freq[0])
-    
     # Calcular las medias y desviaciones estándar para cada frecuencia
     avg_X = [np.mean([datos_X[j][i] for j in range(6)]) for i in range(N)]
     avg_Y = [np.mean([datos_Y[j][i] for j in range(6)]) for i in range(N)]
     std_X = [np.std([datos_X[j][i] for j in range(6)], ddof=1) for i in range(N)]
     std_Y = [np.std([datos_Y[j][i] for j in range(6)], ddof=1) for i in range(N)]
     
-    frecuencias = freq[0]  # Usar las frecuencias del primer archivo
-    
-    # Crear un DataFrame con los resultados
+    frecuencias = freq[0]  # Usar las frecuencias del primer archivo 
     df_promedios = pd.DataFrame({
         'Frecuencia': frecuencias,
         'Media_X': avg_X,
@@ -73,7 +72,6 @@ for subpath, label in zip(subpaths, labels):
         'Error_Y': std_Y
     })
     
-    # Imprimir o guardar los resultados (descomentar si es necesario)
     # print(df_promedios)
     
     # Ajuste de la función (usamos Media_Y para el ajuste)
