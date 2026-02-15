@@ -110,7 +110,7 @@ for material, df in dfs_materiales.items():
     D = (V_0 - V_cux)**2 + V_cuy**2
     
     # Impedancia imaginaria
-    Z_imag = (V_cuy * V_0) / D
+    Z_imag = R_0 * (V_cuy * V_0) / D
     
     # Derivadas parciales
     dZ_dV_cuy = V_0 * ((V_0 - V_cux)**2 - V_cuy**2) / D**2
@@ -134,8 +134,8 @@ for material, df in dfs_materiales.items():
     Freq_lista.append(F)
 
 
-def f(x, a, b):
-    return (a/((2*np.pi*K)/R_0)) * x + b
+def f(x, mu,b):
+    return 2* np.pi * x * K * mu + b
 
 # Loop por materiales
 for i, material in enumerate(materiales_lista):
