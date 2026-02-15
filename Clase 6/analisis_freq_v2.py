@@ -113,15 +113,17 @@ for material, df in dfs_materiales.items():
     Z_imag = R_0 * (V_cuy * V_0) / D
     
     # Derivadas parciales
-    dZ_dV_cuy = V_0 * ((V_0 - V_cux)**2 - V_cuy**2) / D**2
-    dZ_dV_cux = 2 * V_0 * V_cuy * (V_0 - V_cux) / D**2
-    dZ_dV0    = V_cuy * (D - 2 * V_0 * (V_0 - V_cux)) / D**2
+    dZ_dV_cuy = R_0 * V_0 * ((V_0 - V_cux)**2 - V_cuy**2) / D**2
+    dZ_dV_cux = R_0 * 2 * V_0 * V_cuy * (V_0 - V_cux) / D**2
+    dZ_dV0 = R_0 * V_cuy * (D - 2 * V_0 * (V_0 - V_cux)) / D**2
+    dZ_dR0 = (V_0 * V_cuy) / D
     
     # Propagación de error
     Z_err = np.sqrt(
         (dZ_dV_cuy * sigma_cuy)**2 +
         (dZ_dV_cux * sigma_cux)**2 +
-        (dZ_dV0 * err_V_0)**2
+        (dZ_dV0 * err_V_0)**2+
+        (dZ_dR0*err_R_0)**2
     )
     
     # Guardar resultados usando append
@@ -139,22 +141,23 @@ def f(x, mu,b):
 
 # Loop por materiales
 for i, material in enumerate(materiales_lista):
+    mask =Freq_lista[i] <= 100000   #para ir viendo hasta dodne tomar
     
-    popt, pcov = curve_fit(f, Freq_lista[i][1:], Z_imaginaria_lista[i][1:], sigma=Z_err_lista[i][1:], absolute_sigma=True) #saco el primer punto porque es un salto y nada que ver eso
+    popt, pcov = curve_fit(f, Freq_lista[i][mask][1:], Z_imaginaria_lista[i][mask][1:], sigma=Z_err_lista[i][mask][1:], absolute_sigma=True)
     perr = np.sqrt(np.diag(pcov))
     
     print(f"Resultados del ajuste para {material}:")
     print("mu:", popt[0], "Error:", perr[0])
-    print("offset:", popt[1], "Error:", perr[1])
+    #rint("offset:", popt[1], "Error:", perr[1])
     
     
-    x_ajuste = np.linspace(np.min(Freq_lista[i][1:]),np.max(Freq_lista[i][1:]),len(Freq_lista[i][1:])*10) # defino un eje horizontal más fino que los puntos que medí, para que el ajuste se vea suave
+    x_ajuste = np.linspace(np.min(Freq_lista[i][mask][1:]),np.max(Freq_lista[i][mask][1:]),len(Freq_lista[i][mask][1:])*10) # defino un eje horizontal más fino que los puntos que medí, para que el ajuste se vea suave
     
     plt.figure()
     plt.title('Datos ajustados')
     plt.xlabel('X')
     plt.ylabel('Y')
-    plt.errorbar(Freq_lista[i][1:], Z_imaginaria_lista[i][1:], Z_err_lista[i][1:], 0, '.')
+    plt.errorbar(Freq_lista[i][mask][1:], Z_imaginaria_lista[i][mask][1:], Z_err_lista[i][mask][1:], 0, '.')
     plt.plot(x_ajuste,f(x_ajuste,popt[0],popt[1]))
     plt.grid(True)
     plt.show()
