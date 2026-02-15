@@ -141,9 +141,9 @@ def f(x, mu,b):
 
 # Loop por materiales
 for i, material in enumerate(materiales_lista):
-    mask =Freq_lista[i] <= 100000   #para ir viendo hasta dodne tomar
+    mask = (Freq_lista[i] >= 800) & (Freq_lista[i] <= 6000)   #para ir viendo hasta dodne tomar, ahi los ajutes estas lindos, en sentido de chi y el skin effect aplica un 10%-40%
     
-    popt, pcov = curve_fit(f, Freq_lista[i][mask][1:], Z_imaginaria_lista[i][mask][1:], sigma=Z_err_lista[i][mask][1:], absolute_sigma=True)
+    popt, pcov = curve_fit(f, Freq_lista[i][mask], Z_imaginaria_lista[i][mask], sigma=Z_err_lista[i][mask], absolute_sigma=True)
     perr = np.sqrt(np.diag(pcov))
     
     print(f"Resultados del ajuste para {material}:")
@@ -151,14 +151,36 @@ for i, material in enumerate(materiales_lista):
     #rint("offset:", popt[1], "Error:", perr[1])
     
     
-    x_ajuste = np.linspace(np.min(Freq_lista[i][mask][1:]),np.max(Freq_lista[i][mask][1:]),len(Freq_lista[i][mask][1:])*10) # defino un eje horizontal más fino que los puntos que medí, para que el ajuste se vea suave
+    x_ajuste = np.linspace(np.min(Freq_lista[i][mask]),np.max(Freq_lista[i][mask]),len(Freq_lista[i][mask])*10) # defino un eje horizontal más fino que los puntos que medí, para que el ajuste se vea suave
     
     plt.figure()
     plt.title('Datos ajustados')
     plt.xlabel('X')
     plt.ylabel('Y')
-    plt.errorbar(Freq_lista[i][mask][1:], Z_imaginaria_lista[i][mask][1:], Z_err_lista[i][mask][1:], 0, '.')
+    plt.errorbar(Freq_lista[i][mask], Z_imaginaria_lista[i][mask], Z_err_lista[i][mask], 0, '.')
     plt.plot(x_ajuste,f(x_ajuste,popt[0],popt[1]))
     plt.grid(True)
     plt.show()
+    
+    # Recursos necesarios para calcular el chi^2 y su p-valor:
+    puntos = len(Freq_lista[i][mask][15:])
+    params = len(popt)
+    grados_libertad = puntos - params
+    y_modelo = f(Freq_lista[i][mask][15:],popt[0],popt[1])
+    
+    # calculo el chi^2 y su p-valor:
+    chi_cuadrado = np.sum(((Z_imaginaria_lista[i][mask][15:]-y_modelo)/Z_err_lista[i][mask][15:])**2)
+    chi_reducido = chi_cuadrado/grados_libertad
+    p_chi = stats.chi2.sf(chi_cuadrado, grados_libertad)
+    # interpretamos el resultado:
+    print('chi^2: ' + str(chi_cuadrado))
+    print('chi^2 reducido: ' + str(chi_reducido))
+    print('p-valor del chi^2: ' + str(p_chi))
+    
+    if Z_err_lista[i][mask][0]==0:
+        print('No se declararon errores en la variable y.')
+    elif p_chi<0.05:
+        print('Se rechaza la hipótesis de que el modelo ajuste a los datos.')
+    else:
+        print('No se puede rechazar la hipótesis de que el modelo ajuste a los datos.')
 
