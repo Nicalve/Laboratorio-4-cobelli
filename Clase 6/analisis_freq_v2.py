@@ -140,7 +140,7 @@ def f(x, a, b):
 # Loop por materiales
 for i, material in enumerate(materiales_lista):
     
-    popt, pcov = curve_fit(f, Freq_lista[i], Z_imaginaria_lista[i], sigma=Z_err_lista[i], absolute_sigma=True)
+    popt, pcov = curve_fit(f, Freq_lista[i][1:], Z_imaginaria_lista[i][1:], sigma=Z_err_lista[i][1:], absolute_sigma=True) #saco el primer punto porque es un salto y nada que ver eso
     perr = np.sqrt(np.diag(pcov))
     
     print(f"Resultados del ajuste para {material}:")
@@ -148,13 +148,13 @@ for i, material in enumerate(materiales_lista):
     print("offset:", popt[1], "Error:", perr[1])
     
     
-    x_ajuste = np.linspace(np.min(Freq_lista[i]),np.max(Freq_lista[i]),len(Freq_lista[i])*10) # defino un eje horizontal más fino que los puntos que medí, para que el ajuste se vea suave
+    x_ajuste = np.linspace(np.min(Freq_lista[i][1:]),np.max(Freq_lista[i][1:]),len(Freq_lista[i][1:])*10) # defino un eje horizontal más fino que los puntos que medí, para que el ajuste se vea suave
     
     plt.figure()
     plt.title('Datos ajustados')
     plt.xlabel('X')
     plt.ylabel('Y')
-    plt.errorbar(Freq_lista[i], Z_imaginaria_lista[i], Z_err_lista[i], 0, '.')
+    plt.errorbar(Freq_lista[i][1:], Z_imaginaria_lista[i][1:], Z_err_lista[i][1:], 0, '.')
     plt.plot(x_ajuste,f(x_ajuste,popt[0],popt[1]))
     plt.grid(True)
     plt.show()
