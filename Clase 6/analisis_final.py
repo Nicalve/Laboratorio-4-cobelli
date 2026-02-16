@@ -6,7 +6,7 @@ Created on Sat Feb 14 15:08:16 2026
 @author: nclotta
 """
 
-# Time-stamp: </Users/nclotta/Laboratorio-4-cobelli/Clase 6/analisis_final.py, 2026-02-15 Sunday 18:49:35 nclotta>
+# Time-stamp: </Users/nclotta/Laboratorio-4-cobelli/Clase 6/analisis_final.py, 2026-02-15 Sunday 22:42:11 nclotta>
 
 
 import numpy as np
@@ -32,6 +32,7 @@ def resistividad(r0, L):
     return res_cable(r0) * ((0.0004 - 0.00002)**2 * np.pi) / (0.85*2-L)
 
 datos_segun_L = [
+    [0.000, "L_completo", 16],
     [0.121, "L_12_1", 5],
     [0.187, "L_18_7", 1],
     [0.261, "L26_1",  7],
@@ -64,6 +65,25 @@ def std_por_medicion(f=sys.stdout):
 #        print(f"{1 if idx[i] == dtl[2] else 0}", file=f)
 #        print(f"eta = {np.abs(res[idx[i]])}", file=f)
 #        print(f"std = {np.abs(std[idx[i]])}", file=f)
+
+def lineal(x, a, b):
+    return a * x + b
+
+def ajuste_L():
+    err_l = 0.003 # 0.0025 # cm
+    std = []
+    res = []
+    L_0 = []
+    L_e = []
+    for i, dtl in enumerate(datos_segun_L):
+        directory_path = carpeta_datos / dtl[1]
+        files = [item for item in directory_path.iterdir() if item.is_file()]
+        df = pd.read_csv(files[dtl[2]]).T
+        L_0.append(dtl[0])
+        L_e.append(err_l/dtl[0])
+        std.append(np.std(df[0]))
+        res.append(resistividad(df[0], dtl[0]))
+    
 
 
 if __name__ == "__main__":
