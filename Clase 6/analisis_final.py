@@ -6,7 +6,7 @@ Created on Sat Feb 14 15:08:16 2026
 @author: nclotta
 """
 
-# Time-stamp: </Users/nclotta/Laboratorio-4-cobelli/Clase 6/analisis_final.py, 2026-02-16 Monday 22:09:29 nclotta>
+# Time-stamp: </Users/nclotta/Laboratorio-4-cobelli/Clase 6/analisis_final.py, 2026-02-16 Monday 23:42:42 nclotta>
 
 
 import numpy as np
@@ -21,12 +21,10 @@ import sys
 carpeta_datos = p("/Users/nclotta/Laboratorio-4-cobelli/datos_exp2")
 
 voltaje = 0.5
+rms=True
 
-def res_cable(r0, rms=True):
-    V_0 = voltaje
-    R_res = 1050  # Ohm
-    V = np.mean(np.abs(r0 * np.sqrt(2) if rms else r0))
-    return R_res / ((V_0/V)-1)
+def res_cable(r0):
+    return 1050 / ((voltaje/(np.mean(np.abs(r0 * np.sqrt(2) if rms else r0)))) - 1)
 
 def resistividad(r0, L):
     return res_cable(r0) * ((0.0004 - 0.000025)**2 * np.pi) / (0.85*2-L)
@@ -92,7 +90,7 @@ def ajuste_L():
         df = pd.read_csv(files[dtl[2]]).T
         L_0.append(0.85*2-dtl[0])
         L_e.append(err_l)
-        v_0.append(np.mean(df[0]))
+        v_0.append(np.mean(np.abs(df[0] * np.sqrt(2) if rms else df[0])))
         v_e.append(np.std(df[0]))
         R_c.append(res_cable(df[0]))
         R_e.append(np.sqrt(((1/((voltaje/v_0[i])-1))*err_R)**2 +
@@ -101,7 +99,7 @@ def ajuste_L():
         res.append(resistividad(df[0], dtl[0]))
         err.append(np.sqrt(((np.pi*r**2)/L_0[i]*R_e[i])**2 +
                                ((2*np.pi*R_c[i]*r)/L_0[i]*err_radio)**2 +
-                               (((R_c[i]*np.pi*r**2)/(L_0[i])**2)*L_e[i])**2))   
+                               (((R_c[i]*np.pi*r**2)/(L_0[i])**2)*L_e[i])**2))
     #print(np.array(err)/np.array(res) > np.array(L_e)/np.array(L_0))
     popt, pcov = curve_fit(lineal, L_0, R_c, sigma=R_e, absolute_sigma=True)
     perr = np.sqrt(np.diag(pcov))
@@ -114,14 +112,26 @@ def ajuste_L():
     #print(f"{eta_sin_corr/eta}")
     # -> 1.137777778
     # La correccion a r acerca el valor de eta al tabulado en un 13,8%
-    plt.errorbar(L_0, res, yerr=err, xerr=L_e, fmt="o", capsize=2.5, label="Datos experimentales")
-    #plt.errorbar(L_0, R_c, yerr=R_c, xerr=L_e, fmt="o", capsize=2.5, label="Datos experimentales")
-    res_modelo = np.pi*r**2*popt[0]*np.array(L_0)
-    print(res_modelo)
-    plt.plot(L_0, res_modelo, label="Ajuste lineal")
-    plt.legend()
-    plt.grid()
+    #plt.errorbar(L_0, res, yerr=err, xerr=L_e, fmt="o", capsize=2.5, label="Datos experimentales")
+    fig, (ax1, ax2) = plt.subplots(2, 1, sharex=True, gridspec_kw={'height_ratios': [3, 1]}, figsize=(8, 6))
+    ax1.errorbar(L_0, R_c, yerr=R_e, xerr=L_e, fmt=".", capsize=2.5, ecolor="red", label="Datos experimentales", zorder=5)
+    res_modelo = lineal(np.array(L_0), popt[0], popt[1])
+    ax1.plot(L_0, res_modelo, label="Ajuste lineal")
+    ax1.legend()
+    ax2.errorbar(L_0, R_c - res_modelo, yerr=R_e, fmt=".", capsize=2.5, ecolor="darkblue", label="Residuos", zorder=5)
+    ax1.set_ylabel(r"R [$\Omega$]", fontsize=16)
+    ax2.set_ylabel(r"Residuos", fontsize=16)
+    ax2.axhline(y=0, color='r', linestyle='--')
+    ax2.set_xlabel("L [m]", fontsize=16)
+    ax2.legend()
+    ax1.grid()
+    ax2.grid()
     plt.savefig("ajuste_resistividad.png")
+    grados_libertad = len(L_0) - len(popt)
+    chi_cuadrado = np.sum((np.array(R_c - res_modelo)/np.array(R_e))**2)
+    p_chi = stats.chi2.sf(chi_cuadrado, grados_libertad)
+    print('chi^2 reducido: ' + str(chi_cuadrado/grados_libertad))
+    print('p-valor del chi^2 reducido: ' + str(p_chi))    
 
 if __name__ == "__main__":
     ajuste_L()
