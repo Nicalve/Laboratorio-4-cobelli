@@ -6,7 +6,7 @@ Created on Sat Feb 14 15:08:16 2026
 @author: nclotta
 """
 
-# Time-stamp: </Users/nclotta/Laboratorio-4-cobelli/Clase 6/analisis_final.py, 2026-02-16 Monday 21:34:15 nclotta>
+# Time-stamp: </Users/nclotta/Laboratorio-4-cobelli/Clase 6/analisis_final.py, 2026-02-16 Monday 22:09:29 nclotta>
 
 
 import numpy as np
@@ -114,6 +114,14 @@ def ajuste_L():
     #print(f"{eta_sin_corr/eta}")
     # -> 1.137777778
     # La correccion a r acerca el valor de eta al tabulado en un 13,8%
+    plt.errorbar(L_0, res, yerr=err, xerr=L_e, fmt="o", capsize=2.5, label="Datos experimentales")
+    #plt.errorbar(L_0, R_c, yerr=R_c, xerr=L_e, fmt="o", capsize=2.5, label="Datos experimentales")
+    res_modelo = np.pi*r**2*popt[0]*np.array(L_0)
+    print(res_modelo)
+    plt.plot(L_0, res_modelo, label="Ajuste lineal")
+    plt.legend()
+    plt.grid()
+    plt.savefig("ajuste_resistividad.png")
 
 if __name__ == "__main__":
     ajuste_L()
