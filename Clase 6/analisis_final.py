@@ -6,7 +6,7 @@ Created on Sat Feb 14 15:08:16 2026
 @author: nclotta
 """
 
-# Time-stamp: </Users/nclotta/Laboratorio-4-cobelli/Clase 6/analisis_final.py, 2026-02-15 Sunday 22:42:11 nclotta>
+# Time-stamp: </Users/nclotta/Laboratorio-4-cobelli/Clase 6/analisis_final.py, 2026-02-16 Monday 21:34:15 nclotta>
 
 
 import numpy as np
@@ -29,7 +29,7 @@ def res_cable(r0, rms=True):
     return R_res / ((V_0/V)-1)
 
 def resistividad(r0, L):
-    return res_cable(r0) * ((0.0004 - 0.00002)**2 * np.pi) / (0.85*2-L)
+    return res_cable(r0) * ((0.0004 - 0.000025)**2 * np.pi) / (0.85*2-L)
 
 datos_segun_L = [
     [0.000, "L_completo", 16],
@@ -37,9 +37,9 @@ datos_segun_L = [
     [0.187, "L_18_7", 1],
     [0.261, "L26_1",  7],
     [0.270, "L_27_0", 2],
-    [0.360, "L_36",   4], 
-    [0.969, "L_96_9", 5], 
-    [1.060, "L_106",  4], 
+    [0.360, "L_36",   4],
+    [0.969, "L_96_9", 5],
+    [1.060, "L_106",  4],
     [1.350, "L_135",  3]]
 
 #
@@ -61,7 +61,8 @@ def std_por_medicion(f=sys.stdout):
             std.append(np.std(df[0]))
             res.append(resistividad(df[0], dtl[0]))
         idx.append(np.array(std).argmin())
-        print(f"j = {idx[i]}", file=f)      #  L = {dtl[0]}
+        print(f"j = {idx[i]}", file=f)
+        print(f"L = {0.85*2-dtl[0]}", file=f)
 #        print(f"{1 if idx[i] == dtl[2] else 0}", file=f)
 #        print(f"eta = {np.abs(res[idx[i]])}", file=f)
 #        print(f"std = {np.abs(std[idx[i]])}", file=f)
@@ -70,21 +71,49 @@ def lineal(x, a, b):
     return a * x + b
 
 def ajuste_L():
-    err_l = 0.003 # 0.0025 # cm
-    std = []
-    res = []
+    # esto es la propagacion de 0.85*2-L > err_L ~ 0.0025 m
+    err_l = 0.0057 # m
+    R_0 = 1050 # Ohm
+    err_R = 10 # Ohm
+    err_V = 0.0025 # V
+    r = 0.0004 - 0.000025 # m
+    err_radio = 10**-5 # m
     L_0 = []
     L_e = []
+    v_0 = []
+    v_e = []
+    R_c = []
+    R_e = []
+    res = []
+    err = []
     for i, dtl in enumerate(datos_segun_L):
         directory_path = carpeta_datos / dtl[1]
         files = [item for item in directory_path.iterdir() if item.is_file()]
         df = pd.read_csv(files[dtl[2]]).T
-        L_0.append(dtl[0])
-        L_e.append(err_l/dtl[0])
-        std.append(np.std(df[0]))
+        L_0.append(0.85*2-dtl[0])
+        L_e.append(err_l)
+        v_0.append(np.mean(df[0]))
+        v_e.append(np.std(df[0]))
+        R_c.append(res_cable(df[0]))
+        R_e.append(np.sqrt(((1/((voltaje/v_0[i])-1))*err_R)**2 +
+                           ((R_0/(v_0[i] * ((voltaje/v_0[i])-1)**2))*err_V)**2 +
+                           (((R_0 * voltaje)/(v_0[i]*((voltaje/v_0[i])-1))**2)*v_e[i])**2))
         res.append(resistividad(df[0], dtl[0]))
-    
-
+        err.append(np.sqrt(((np.pi*r**2)/L_0[i]*R_e[i])**2 +
+                               ((2*np.pi*R_c[i]*r)/L_0[i]*err_radio)**2 +
+                               (((R_c[i]*np.pi*r**2)/(L_0[i])**2)*L_e[i])**2))   
+    #print(np.array(err)/np.array(res) > np.array(L_e)/np.array(L_0))
+    popt, pcov = curve_fit(lineal, L_0, R_c, sigma=R_e, absolute_sigma=True)
+    perr = np.sqrt(np.diag(pcov))
+    eta = popt[0]*np.pi*r**2
+    err_eta = np.sqrt(((np.pi*r**2)*perr[0])**2 + ((2*np.pi*r*popt[0])*err_radio)**2)
+    print(f"eta = {eta}+{err_eta}")
+    # ahora considero que r no le restamos 25 nm
+    #r = 0.0004 # m
+    #eta_sin_corr = popt[0]*np.pi*r**2
+    #print(f"{eta_sin_corr/eta}")
+    # -> 1.137777778
+    # La correccion a r acerca el valor de eta al tabulado en un 13,8%
 
 if __name__ == "__main__":
-    std_por_medicion()
+    ajuste_L()
