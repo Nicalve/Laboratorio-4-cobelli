@@ -234,7 +234,7 @@ if len(peaks) >= 2:
     plt.plot(perfil_difraccion, color='tab:blue', linewidth=2.5, label='Perfil filtrado')
     plt.plot(peaks, perfil_difraccion[peaks], "x", markersize=12, color='red', label='Picos')
     plt.show()
-    
+
 if len(peaks) > 1:
     pasos_pixeles = np.diff(peaks)                              # diferencias consecutivas
     paso_medio = np.mean(pasos_pixeles)
@@ -253,18 +253,50 @@ else:
     print("¡No hay suficientes picos para calcular el paso!")
 
 # ================== COMPLETAR ESTOS DATOS (del láser y de tu cámara) ==================
-
 lambda_laser_nm = 650          # ←←← CAMBIÁ: longitud de onda en nm (ej: 650 rojo, 532 verde, 632.8 HeNe)
 pixel_size_um   = 5.2          # ←←← CAMBIÁ: tamaño real de cada píxel de la cámara en micrómetros
-D=51.25                              
-
-
+                               # (mirá la ficha técnica de tu cámara/webcam/CCD o calibrá con una regla)
+D = 0.5125                        # metros (ya dado)
+# ====================================================================================
 
 lambda_m = lambda_laser_nm * 1e-9
+pixel_size_m = pixel_size_um * 1e-6
 
-pixel_size_m = pixel_size_um * 1e-6 # Esto viene de calibracion
+delta_y = paso_medio * pixel_size_m          # paso en metros
+
+a = (lambda_m * D) / delta_y                 # ancho de la rendija en metros
+a_um = a * 1e6                               # en micrómetros (más cómodo)
 
 
+print("\n=== RESULTADO: ANCHO DE LA RENDIJA ===")
+print(f"λ = {lambda_laser_nm} nm")
+print(f"Pixel size = {pixel_size_um} µm")
+print(f"Paso medio = {paso_medio:.2f} píxeles → {delta_y*1000:.3f} mm")
+print(f"a = {a:.2e} m  =  {a_um:.1f} µm")
+
+# ====================== GRÁFICO CON RESULTADO INCLUIDO ======================
+plt.figure(figsize=(14, 7))
+plt.plot(perfil_difraccion, linewidth=2.5, color='tab:blue', label='Perfil filtrado')
+
+plt.plot(peaks, perfil_difraccion[peaks], "x", markersize=14, color='red', label='Picos')
+
+for i in range(len(peaks)-1):
+    x_mid = (peaks[i] + peaks[i+1]) / 2
+    dist = pasos_pixeles[i]
+    plt.annotate('', xy=(peaks[i], perfil_difraccion[peaks[i]]*0.85),
+                 xytext=(peaks[i+1], perfil_difraccion[peaks[i]]*0.85),
+                 arrowprops=dict(arrowstyle='<->', color='darkgreen', lw=2))
+    plt.text(x_mid, perfil_difraccion[peaks[i]]*0.92,
+             f'{dist:.0f} px', ha='center', fontsize=11, color='darkgreen')
+
+plt.axvline(centro, color='gray', ls='--', alpha=0.6)
+plt.title(f'Patrón de difracción + Ancho de rendija = {a_um:.1f} µm\n(D = 0.5 m | λ = {lambda_laser_nm} nm)')
+plt.xlabel('Fila (píxeles)')
+plt.ylabel('Intensidad')
+plt.legend()
+plt.grid(True, alpha=0.3)
+plt.tight_layout()
+plt.show()
 
 
 plot_fft_1D = False 
