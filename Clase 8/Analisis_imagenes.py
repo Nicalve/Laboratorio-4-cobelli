@@ -6,10 +6,8 @@ from matplotlib.colors import LogNorm
 from matplotlib.colors import SymLogNorm
 import os
 from scipy.signal import find_peaks
-
-#Tanto imageio como matplotlib tienen funciones imread. La de imageio carga enteros entre 0 y 255, mientras que matplotlib carga
-#entre 0 y 1. Pueden usar cualquiera de las dos.
-
+from scipy.optimize import curve_fit
+from utils import *
 
 ROOT = Path(r"C:\Users\User\Desktop\Laboratorio-4-cobelli\Clase 8\young _2\aluminium_")
 
@@ -31,261 +29,255 @@ if not images:
     print("No se encontraron imágenes.")
     exit()
 
-# print(images[0])
-#=========================================================================
-plot_images = False # Plotear la grilla con todas las imagenes (va, todas las de aluminio xq plotea 30 img)
-#------------------
-if plot_images:
-    filas = 5
-    columnas = 6
-    total_subplots = filas * columnas
-    num_imagenes = len(images)
 
-    fig, axes = plt.subplots(filas, columnas, figsize=(columnas*1.5, filas*1.5))
-    axes = axes.flatten()  # Convertir a 1D para iterar fácilmente
+indexacions = np.arange(1,11)
+rendijas = []
+err_rendijas = []
+for i in range(len(indexacions)):
+    roi =  preparar_roi(images[1+3*i],center_x=890, center_y=1645, offset=650, canal=2)
+    pasos, paso_mean, paso_std, param, imagen_filtrada, mascara, peaks = ajustar_filtro_eliptico_ml(roi)
 
-    # Mostrar imágenes
-    for idx in range(total_subplots):
-        if idx < num_imagenes:
-            axes[idx].imshow(images[idx]) 
-        axes[idx].axis('off')  # Ocultar ejes en todos
+    # visualizar_resultado_filtrado(roi["matriz"],imagen_filtrada,mascara)
 
-    plt.tight_layout()
-    plt.show()
-#=========================================================================
-plot_image_log = False
-if plot_image_log:
-    imagen1 = images[1][:,:,2]
-    offset = np.min(imagen1)
-    print(offset)
-    imagen_desplazada = imagen1 - offset + 1  # ahora mínimo = 1
-    imagen_log = np.log(imagen_desplazada)
-    plt.figure()
-    plt.imshow(imagen_log, cmap="Greys")
-    plt.colorbar()
-    plt.figure()
-    plt.plot(imagen_log[:, 1660])
-    plt.show()
+    col = roi["matriz"].shape[1] // 2
+    perfil_filtrado = imagen_filtrada[:, col]
 
-images = images[1:]
-#=========================================================================
-for i in range(len(images)):
-    imagen = images[i] #sacamos la hoja de calibración
+    plt.figure(figsize=(12, 5))
 
-    center_x = 890
-    center_y = 1660
-    offset  = 600
+    plt.plot(roi["matriz"][:, col], alpha=0.5, label='Original')
+    plt.plot(imagen_filtrada[:, col], linewidth=2, label='Filtrada')
 
-    matriz = imagen[center_x - offset : center_x + offset,
-                    center_y - offset : center_y + offset,
-                    2].astype(float)
-    #=========================================================================
-    plot_matrix = False
-    if plot_matrix:
+    plt.scatter(peaks,
+                imagen_filtrada[peaks, col], s=70)
 
-        plt.figure()
-        plt.imshow(imagen)
-        plt.colorbar()
-
-        plt.figure()
-        plt.imshow(matriz)
-        plt.colorbar()
-        plt.show()
-    #=========================================================================
-
-
-    #  1. FFT 2D 
-    f = np.fft.fft2(matriz)
-    fshift = np.fft.fftshift(f)
-    fshift_abs = np.abs(fshift)
-    espectro_log = np.log10(1 + fshift_abs)        
-    #  2. FILTRO PASA-BAJO (elimina frecuencias altas) 
-
-    rows, cols = matriz.shape
-    crow, ccol = rows // 2, cols // 2
-
-
-    radio = 25          
-    # radio pequeño (10-40)  → elimina muchas altas frecuencias (suavizado fuerte)
-    # radio grande (80-150)  → elimina solo las muy altas (suavizado suave, conserva más detalle)
-    # Máscara circular: True = mantener bajas frecuencias (centro)
-
-
-    y, x = np.ogrid[:rows, :cols]
-    distancia = np.sqrt((y - crow)**2 + (x - ccol)**2)
-    mascara = distancia <= radio                     # ←←← PASA-BAJO
-    # Aplicar filtro
-
-    fshift_filtrado = fshift * mascara
-    #  3. INVERSA FFT 
-
-    f_ishift = np.fft.ifftshift(fshift_filtrado)
-    imagen_filtrada = np.fft.ifft2(f_ishift)
-    imagen_filtrada = np.real(imagen_filtrada)       # usamos real() porque la parte imaginaria es ~0
-
-    plot_fft = False 
-    if plot_fft:
-        #  VISUALIZACIÓN 
-        plt.figure(figsize=(16, 10))
-
-        plt.subplot(2, 3, 1)
-        plt.imshow(matriz, cmap='gray', vmin=matriz.min(), vmax=matriz.max())
-        plt.title('Original (canal 2)')
-        plt.colorbar()
-
-        plt.subplot(2, 3, 2)
-        plt.imshow(espectro_log, cmap='gray')
-        plt.title('Espectro de Fourier (log)')
-        plt.colorbar()
-
-        plt.subplot(2, 3, 3)
-        plt.imshow(mascara, cmap='gray')
-        plt.title(f'Máscara PASA-BAJO\n(Radio = {radio} píxeles)')
-        plt.colorbar()
-
-        plt.subplot(2, 3, 4)
-        plt.imshow(imagen_filtrada, cmap='gray')
-        plt.title('IMAGEN FILTRADA\n(frecuencias altas eliminadas)')
-        plt.colorbar()
-
-        plt.subplot(2, 3, 5)
-        plt.imshow(matriz - imagen_filtrada, cmap='gray')
-        plt.title('Diferencia (solo altas frecuencias removidas)')
-        plt.colorbar()
-
-        plt.subplot(2, 3, 6)
-        plt.imshow(np.log10(1 + np.abs(fshift - fshift_filtrado)), cmap='gray')
-        plt.title('Espectro removido (solo altas frecuencias)')
-        plt.colorbar()
-
-        plt.tight_layout()
-        plt.show()
-
-        #  PERFIL DE COMPARACIÓN 
-        col = offset                     
-        plt.figure(figsize=(12, 5))
-        plt.plot(matriz[:, col], label='Original', linewidth=1.5)
-        plt.plot(imagen_filtrada[:, col], label=f'Filtrada pasa-bajo (radio={radio})', linewidth=2)
-        plt.title('Perfil vertical central - Original vs Filtrada')
-        plt.xlabel('Fila')
-        plt.ylabel('Intensidad')
-        plt.legend()
-        plt.grid(True, alpha=0.3)
-        plt.show()
-
-
-    col = offset 
-    perfil_difraccion =  imagen_filtrada[:, col]
-
-    #  FIND_PEAKS (versión mejorada) ======================
-    peaks, properties = find_peaks(
-        perfil_difraccion,
-        height      = np.max(perfil_difraccion) * 0.03, 
-        distance    = 30,                               
-        prominence  = np.max(perfil_difraccion) * 0.03, 
-        width       = None                              
-    )
-
-
-    if len(peaks) >= 2:
-        pasos = np.diff(peaks.astype(float))          # diferencias en píxeles (float para precisión)
-        paso_promedio = np.mean(pasos)
-        paso_std      = np.std(pasos)
-        paso_min      = np.min(pasos)
-        paso_max      = np.max(pasos)
-        
-
-        centro_recorte = offset                     
-        idx_central = np.argmin(np.abs(peaks - centro_recorte))
-        pico_central = peaks[idx_central]
-        
-
-        ordenes = np.arange(-idx_central, len(peaks) - idx_central)
-        
-
-        coef = np.polyfit(ordenes, peaks, 1)
-        paso_fit = coef[0]
-
-
-    if len(peaks) > 1:
-        pasos = np.diff(peaks)                              # diferencias consecutivas
-        paso_promedio = np.mean(pasos)
-        paso_std   = np.std(pasos)
-
-
-        # Posiciones relativas al centro (para ver órdenes m = 0, ±1, ±2...)
-        centro = offset                                 # índice 500 en el perfil de 1000 píxeles
-        ordenes_relativos = peaks - centro
-
-    else:
-        print("¡No hay suficientes picos para calcular el paso!")
-
-    # ================== COMPLETAR ESTOS DATOS (del láser y de tu cámara) ==================
-    lambda_laser_nm = 650          # ←←← CAMBIÁ: longitud de onda en nm (ej: 650 rojo, 532 verde, 632.8 HeNe)
-    pixel_size_um   = 5.2          # ←←← CAMBIÁ: tamaño real de cada píxel de la cámara en micrómetros
-                                # (mirá la ficha técnica de tu cámara/webcam/CCD o calibrá con una regla)
-    D = 0.5125                        # metros (ya dado)
-    # ====================================================================================
-
-    lambda_m = lambda_laser_nm * 1e-9
-    pixel_size_m = pixel_size_um * 1e-6
-
-    delta_y = paso_promedio * pixel_size_m          # paso en metros
-
-    a = (lambda_m * D) / delta_y                 # ancho de la rendija en metros
-    a_um = a * 1e6                               # en micrómetros (más cómodo)
-
-
-    print("\n=== RESULTADO: ANCHO DE LA RENDIJA ===")
-    print(f"λ = {lambda_laser_nm} nm")
-    print(f"Pixel size = {pixel_size_um} µm")
-    print(f"Paso medio = {paso_promedio:.2f} píxeles → {delta_y*1000:.3f} mm")
-    print(f"a = {a:.2e} m  =  {a_um:.1f} µm")
-
-    # ====================== GRÁFICO CON RESULTADO INCLUIDO ======================
-    plt.figure(figsize=(14, 7))
-    plt.plot(perfil_difraccion, linewidth=2.5, color='tab:blue', label='Perfil filtrado')
-    plt.plot(matriz[:, col], label='Original', alpha=0.3, color =  "Black")
-    plt.plot(peaks, perfil_difraccion[peaks], "x", markersize=14, color='red', label='Picos')
-
-    for i in range(len(peaks)-1):
-        x_mid = (peaks[i] + peaks[i+1]) / 2
-        dist = pasos[i]
-        plt.annotate('', xy=(peaks[i], perfil_difraccion[peaks[i]]*0.85),
-                    xytext=(peaks[i+1], perfil_difraccion[peaks[i]]*0.85),
-                    arrowprops=dict(arrowstyle='<->', color='darkgreen', lw=2))
-        plt.text(x_mid, perfil_difraccion[peaks[i]]*0.92,
-                f'{dist:.0f} px', ha='center', fontsize=11, color='darkgreen')
-
-    plt.axvline(centro, color='gray', ls='--', alpha=0.6)
-    plt.xlabel('Fila (píxeles)')
+    plt.title('Perfil vertical central')
+    plt.xlabel('Fila')
     plt.ylabel('Intensidad')
     plt.legend()
     plt.grid(True, alpha=0.3)
-    plt.tight_layout()
     plt.show()
 
 
-plot_fft_1D = False 
-if plot_fft_1D:
-    col = offset 
+    # ================== DATOS EXPERIMENTALES ==================
+    lambda_laser_nm = 650
+    err_lambda_nm = 0                   #falta
 
-    f = np.fft.fft(matriz[:, col]) #transformada sobre datos recortado (recortados en las columnas)
+    px_por_mm = 23.87
+    #err_px_mm = 
+    distancia_cuadradito = 1000
+    #err_distancia_cuadradito =                          #falta
+    pixel_size_um = distancia_cuadradito / px_por_mm
+    
+    err_pixel_size_um = 0               #falta
+    #err_pixel_size_um = np.sqrt(((1 / px_por_mm)*err_distancia_cuadradito)**2+((-distancia_cuadradito / px_por_mm**2)*err_px_mm)**2)
+    #el verdadero error es el de arriba
 
-    abs_f = f
-    espectro_log = np.log10(1 +abs_f) #en escala log
-    # print(fshift_abs)
-    plt.plot(abs_f)
-    plt.show()
+    D_m = 0.5125
+    err_D_m = 0.01
+    # ==========================================================
 
-    f_abs_fileted = abs_f[:100]
-    matriz_filtrada =  np.fft.ifft(f_abs_fileted)
-    matriz_filtrada = np.real(matriz_filtrada)
+    # Conversión a SI
+    lambda_m = lambda_laser_nm * 1e-9
+    err_lambda_m = err_lambda_nm * 1e-9
 
-    plt.plot(matriz[:, col])
-    plt.show()
-    plt.plot(matriz_filtrada)
-    plt.show()
+    pixel_size_m = pixel_size_um * 1e-6
+    err_pixel_size_m = err_pixel_size_um * 1e-6
+
+    # Paso en metros
+    delta_y = paso_mean * pixel_size_m
+
+    err_delta_y = np.sqrt(
+        (paso_mean * err_pixel_size_m)**2 +
+        (pixel_size_m * paso_std)**2
+    )
+
+    # Ancho de rendija
+    a = (lambda_m * D_m) / delta_y
+
+    err_a = np.sqrt(
+        ((D_m / delta_y) * err_lambda_m)**2 +
+        ((lambda_m / delta_y) * err_D_m)**2 +
+        ((-(lambda_m * D_m) / delta_y**2) * err_delta_y)**2
+    )
+
+    a_um = a * 1e6
+    err_a_um = err_a * 1e6
+
+    print("\n=== RESULTADO: ANCHO DE LA RENDIJA ===")
+    print(f"Paso medio = {paso_mean:.2f} px")
+    print(f"a = {a_um:.2f} ± {err_a_um:.2f} µm")
+
+    rendijas.append(a)   # en metros
+    err_rendijas.append(err_a) # en metros
+
+
+
+masitas =  np.array([0.8234 , 0.6678, 1.0301,2.0670,3.1022,5.1782,4.1323,3.7700,2.7438,1.4912])  #en g
+
+
+plt.figure()
+
+plt.errorbar(masitas,
+             rendijas,
+             yerr=err_rendijas,
+             fmt='o',
+             label="Ancho de la rendija")
+
+plt.xlabel("Masa [g]")
+plt.ylabel("a [m]")
+plt.grid(True)
+plt.legend()
+plt.show()
+
+#todo en metros
+g=  9.80665 #m/s
+L=  0.29 # m
+x = L # m  #cambiar por el valor debido
+d = 0.00596 #m
+
+def f(m, E, b):
+    return (32/np.pi)*(1/d**4)*((m*g)/E)*(L*x**2 - (x**3)/3)+ b
+
+
+m_kg = masitas * 1e-3
+
+popt, pcov = curve_fit(
+    f,
+    m_kg,
+    rendijas,
+    sigma=err_rendijas,
+    absolute_sigma=True
+)
+
+E_ajustado = popt[0]
+b_ajustado =  popt[1]
+err_E = np.sqrt(pcov[0,0])
+
+print("E =", E_ajustado, "+/-", err_E)
+
+modelo = f(m_kg, E_ajustado, b_ajustado)
+residuos = rendijas - modelo
+
+chi2 = np.sum(((rendijas - modelo)/err_rendijas)**2)
+gl = len(rendijas) - len(popt)   # N - parámetros
+chi2_red = chi2 / gl
+
+
+fig, axs = plt.subplots(2, 1, figsize=(7, 8), sharex=True)
+
+# ---- Ajuste ----
+axs[0].errorbar(masitas,
+                rendijas,
+                yerr=err_rendijas,
+                fmt='o',
+                label="Datos")
+
+m_linea = np.linspace(min(masitas), max(masitas), 300)
+axs[0].plot(m_linea,
+            f(m_linea*1e-3, E_ajustado, b_ajustado),
+            '--',
+            label=f"Ajuste\nE = {E_ajustado:.2e} ± {err_E:.2e} Pa\n"
+                  f"χ²_red = {chi2_red:.2f}")
+
+axs[0].set_ylabel("a [m]")
+axs[0].grid(True)
+axs[0].legend()
+
+# ---- Residuos ----
+axs[1].errorbar(masitas,
+                residuos,
+                yerr=err_rendijas,
+                fmt='o')
+
+axs[1].axhline(0, linestyle='--')
+axs[1].set_xlabel("Masa [kg]")
+axs[1].set_ylabel("Residuos [m]")
+axs[1].grid(True)
+
+plt.tight_layout()
+plt.show()
+
+
+# =========================
+# AJUSTE LINEAL POLYFIT (grado 1)
+# =========================
+
+coef, cov_lin = np.polyfit(
+    m_kg,
+    rendijas,
+    1,
+    w=1/np.array(err_rendijas),
+    cov=True
+)
+
+pendiente = coef[0]
+intercepto = coef[1]
+
+err_pend = np.sqrt(cov_lin[0,0])
+err_int = np.sqrt(cov_lin[1,1])
+
+modelo_lin = pendiente*m_kg + intercepto
+residuos_lin = rendijas - modelo_lin
+
+chi2_lin = np.sum(((rendijas - modelo_lin)/err_rendijas)**2)
+gl_lin = len(rendijas) - 2
+chi2_red_lin = chi2_lin / gl_lin
+
+
+# =========================
+# GRÁFICOS
+# =========================
+fig, axs = plt.subplots(2, 1, figsize=(7, 9), sharex=True)
+
+# ---- Ajustes ----
+axs[0].errorbar(masitas,
+                rendijas,
+                yerr=err_rendijas,
+                fmt='o',
+                label="Datos")
+
+m_linea = np.linspace(min(masitas), max(masitas), 300)
+
+# Modelo físico
+axs[0].plot(m_linea,
+            f(m_linea*1e-3, E_ajustado, b_ajustado ),
+            '--',
+            label=f"Modelo físico\nE = {E_ajustado:.2e} ± {err_E:.2e} Pa\n"
+                  f"χ²_red = {chi2_red:.2f}")
+
+# Ajuste lineal libre
+axs[0].plot(m_linea,
+            pendiente*(m_linea*1e-3) + intercepto,
+            ':',
+            label=f"Lineal (polyfit)\n"
+                  f"χ²_red = {chi2_red_lin:.2f}")
+
+axs[0].set_ylabel("a [m]")
+axs[0].grid(True)
+axs[0].legend()
+
+
+# ---- Residuos ----
+axs[1].errorbar(masitas,
+                residuos,
+                yerr=err_rendijas,
+                fmt='o',
+                label="Residuos modelo físico")
+
+axs[1].errorbar(masitas,
+                residuos_lin,
+                yerr=err_rendijas,
+                fmt='x',
+                label="Residuos lineal")
+
+axs[1].axhline(0, linestyle='--')
+axs[1].set_xlabel("Masa [g]")
+axs[1].set_ylabel("Residuos [m]")
+axs[1].grid(True)
+axs[1].legend()
+
+plt.tight_layout()
+plt.show()
 
 
 

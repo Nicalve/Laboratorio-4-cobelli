@@ -115,7 +115,8 @@ if plot_fft:
     plt.show()
 
     #  PERFIL DE COMPARACIÓN 
-    row = offset                     
+    row = offset   
+    #bineado = np.mean()                  
     plt.figure(figsize=(12, 5))
     plt.plot(matriz[row, :],".-" , label='Original', linewidth=1.5, alpha = 0.1)
     plt.plot(imagen_filtrada[row, :],".-" , label=f'Filtrada pasa-bajo (radio={radio})', linewidth=2)

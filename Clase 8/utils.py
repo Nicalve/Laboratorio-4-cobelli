@@ -3,7 +3,7 @@ import numpy as np
 from scipy.signal import find_peaks
 from scipy.optimize import differential_evolution
 
-def preparar_roi(imagen,center_x=890, center_y=1645, offset=650, canal=2):
+def preparar_roi(imagen,center_x=890, center_y=1645, offset=650, canal=2): # (Region Of Interest)
     """
     Extrae la región de interés y construye
     todas las variables geométricas necesarias
@@ -33,7 +33,7 @@ def preparar_roi(imagen,center_x=890, center_y=1645, offset=650, canal=2):
     }
 
 def ajustar_filtro_circular_ml(roi,bounds=(8, 120)):
-
+    print("Iniciando optimizacion")
     matriz = roi["matriz"]
     distancia = roi["distancia"]
     col = roi["col_central"]
@@ -94,12 +94,12 @@ def ajustar_filtro_circular_ml(roi,bounds=(8, 120)):
 
     if len(peaks) >= 2:
         pasos = np.diff(peaks.astype(float))
-        return pasos, np.mean(pasos), np.std(pasos), sigma_opt
+        return pasos, np.mean(pasos), np.std(pasos), sigma_opt, imagen_filtrada, mascara, peaks
     else:
-        return None, None, None, sigma_opt
+        return None, None, None, sigma_opt, imagen_filtrada, mascara, peaks
 
 def ajustar_filtro_eliptico_ml(roi):
-
+    print("Iniciando optimizacion")
     matriz = roi["matriz"]
     kx = roi["kx"]
     ky = roi["ky"]
@@ -133,7 +133,7 @@ def ajustar_filtro_eliptico_ml(roi):
 
     result = differential_evolution(
         loss,
-        bounds=[(5,150),(5,150)],
+        bounds=[(8, 120),(8, 120)],
         popsize=20,
         maxiter=40,
         tol=1e-3,
@@ -160,12 +160,12 @@ def ajustar_filtro_eliptico_ml(roi):
 
     if len(peaks) >= 2:
         pasos = np.diff(peaks.astype(float))
-        return pasos, np.mean(pasos), np.std(pasos), (sx_opt, sy_opt)
+        return pasos, np.mean(pasos), np.std(pasos), (sx_opt, sy_opt), imagen_filtrada, mascara, peaks
     else:
-        return None, None, None, (sx_opt, sy_opt)
+        return None, None, None, (sx_opt, sy_opt), imagen_filtrada, mascara, peaks
     
 def ajustar_filtro_radio_barrido(roi, radio_min=12, radio_max=200, n_radios=100):
-
+    print("Iniciando optimizacion")
     matriz = roi["matriz"]
     distancia = roi["distancia"]
     col = roi["col_central"]
@@ -219,74 +219,35 @@ def ajustar_filtro_radio_barrido(roi, radio_min=12, radio_max=200, n_radios=100)
 
     if len(peaks) >= 2:
         pasos = np.diff(peaks.astype(float))
-        return pasos, np.mean(pasos), np.std(pasos), r_opt
+        return pasos, np.mean(pasos), np.std(pasos), r_opt, imagen_filtrada, mascara, peaks
     else:
-        return None, None, None, r_opt
+        return None, None, None, r_opt, imagen_filtrada, mascara, peaks
     
-def visualizar_resultado_filtrado_unificado(matriz_original, imagen_filtrada,  mascara, tipo_filtro="gauss_eliptico", parametros=None, loss=None):
+def visualizar_resultado_filtrado(matriz_original, imagen_filtrada, mascara):
     """
-    Visualización genérica para:
-    - Gaussiana circular
-    - Gaussiana elíptica
-    - Máscara dura (radio)
+    Visualiza únicamente:
+    - Imagen original
+    - Imagen filtrada
+    - Máscara en espacio de Fourier
     """
 
-    fig = plt.figure(figsize=(20, 10))
+    fig, axes = plt.subplots(1, 3, figsize=(18, 5))
 
-    # ================= FILA 1 =================
-    ax1 = plt.subplot(2, 3, 1)
-    im1 = ax1.imshow(matriz_original, cmap='gray')
-    ax1.set_title('Imagen Original (recorte)', fontsize=14)
-    plt.colorbar(im1, ax=ax1)
+    # Imagen original
+    im0 = axes[0].imshow(matriz_original, cmap='gray')
+    axes[0].set_title('Imagen Original')
+    plt.colorbar(im0, ax=axes[0])
 
-    ax2 = plt.subplot(2, 3, 2)
-    im2 = ax2.imshow(imagen_filtrada, cmap='gray')
-    ax2.set_title(f'Imagen Filtrada\n({tipo_filtro})', fontsize=14)
-    plt.colorbar(im2, ax=ax2)
+    # Imagen filtrada
+    im1 = axes[1].imshow(imagen_filtrada, cmap='gray')
+    axes[1].set_title('Imagen Filtrada')
+    plt.colorbar(im1, ax=axes[1])
 
-    # ================= FILA 2 =================
-    ax3 = plt.subplot(2, 3, 3)
-    im3 = ax3.imshow(mascara, cmap='jet')
-    ax3.set_title('Máscara en espacio de Fourier', fontsize=13)
-    plt.colorbar(im3, ax=ax3)
-
-    ax4 = plt.subplot(2, 3, 4)
-    diff = matriz_original - imagen_filtrada
-    im4 = ax4.imshow(diff, cmap='gray')
-    ax4.set_title('Diferencia\n(altas frecuencias removidas)', fontsize=13)
-    plt.colorbar(im4, ax=ax4)
-
-    # Perfil central
-    col_central = matriz_original.shape[1] // 2
-    ax5 = plt.subplot(2, 3, 5)
-    ax5.plot(matriz_original[:, col_central], label='Original', alpha=0.7)
-    ax5.plot(imagen_filtrada[:, col_central], label='Filtrada', linewidth=2.5)
-    ax5.set_title('Perfil central comparativo', fontsize=13)
-    ax5.legend()
-    ax5.grid(True, alpha=0.3)
-
-    # ================= PANEL INFO =================
-    ax6 = plt.subplot(2, 3, 6)
-    ax6.axis('off')
-
-    texto = "PARÁMETROS DEL FILTRO\n\n"
-
-    if parametros is not None:
-        for clave, valor in parametros.items():
-            texto += f"{clave} = {valor}\n"
-
-    if loss is not None:
-        texto += f"\nLoss = {loss:.4f}\n"
-        texto += "(desviación estándar de pasos)"
-
-    ax6.text(0.05, 0.5, texto,
-             fontsize=13,
-             va='center',
-             bbox=dict(boxstyle="round",
-                       facecolor="lightblue",
-                       alpha=0.3))
+    # Máscara
+    im2 = axes[2].imshow(mascara, cmap='jet')
+    axes[2].set_title('Máscara (Fourier)')
+    plt.colorbar(im2, ax=axes[2])
 
     plt.tight_layout()
     plt.show()
-
 
