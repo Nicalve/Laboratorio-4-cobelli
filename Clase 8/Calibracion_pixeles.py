@@ -127,11 +127,12 @@ if plot_fft:
     plt.show()
 
 
-perfil_fila = -imagen_filtrada[row, :] 
+perfil_fila = imagen_filtrada[row, :] 
+#perfil_fila = np.mean(imagen_filtrada, axis=0) #no usar
 #=========================================================================
 #  FIND_PEAKS (versión mejorada) ======================
 peaks, properties = find_peaks(
-    perfil_fila,
+    -imagen_filtrada[row, :] ,
     width       = None                              
 )
 
@@ -173,7 +174,7 @@ if len(peaks) >= 2:
     plt.legend()
     
     plt.subplot(1, 2, 2)
-    plt.plot(-matriz[row, :],".-" , label='Original', linewidth=1.5, alpha = 0.1)
+    plt.plot(matriz[row, :],".-" , label='Original', linewidth=1.5, alpha = 0.1)
     plt.plot(perfil_fila, color='tab:blue', linewidth=2.5, label='Perfil filtrado')
     plt.plot(peaks, perfil_fila[peaks], "x", markersize=12, color='red', label='Picos')
     plt.show()

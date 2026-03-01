@@ -66,237 +66,204 @@ if plot_image_log:
     plt.figure()
     plt.plot(imagen_log[:, 1660])
     plt.show()
+
+images = images[1:]
 #=========================================================================
+for i in range(len(images)):
+    imagen = images[i] #sacamos la hoja de calibración
 
-imagen = images[1]
+    center_x = 890
+    center_y = 1660
+    offset  = 600
 
-center_x = 890
-center_y = 1660
-offset  = 600
+    matriz = imagen[center_x - offset : center_x + offset,
+                    center_y - offset : center_y + offset,
+                    2].astype(float)
+    #=========================================================================
+    plot_matrix = False
+    if plot_matrix:
 
-matriz = imagen[center_x - offset : center_x + offset,
-                center_y - offset : center_y + offset,
-                2].astype(float)
-#=========================================================================
-plot_matrix = False
-if plot_matrix:
+        plt.figure()
+        plt.imshow(imagen)
+        plt.colorbar()
 
-    plt.figure()
-    plt.imshow(imagen)
-    plt.colorbar()
-
-    plt.figure()
-    plt.imshow(matriz)
-    plt.colorbar()
-    plt.show()
-#=========================================================================
-
-
-#  1. FFT 2D 
-f = np.fft.fft2(matriz)
-fshift = np.fft.fftshift(f)
-fshift_abs = np.abs(fshift)
-espectro_log = np.log10(1 + fshift_abs)        
-#  2. FILTRO PASA-BAJO (elimina frecuencias altas) 
-
-rows, cols = matriz.shape
-crow, ccol = rows // 2, cols // 2
+        plt.figure()
+        plt.imshow(matriz)
+        plt.colorbar()
+        plt.show()
+    #=========================================================================
 
 
-radio = 25          
-# radio pequeño (10-40)  → elimina muchas altas frecuencias (suavizado fuerte)
-# radio grande (80-150)  → elimina solo las muy altas (suavizado suave, conserva más detalle)
-# Máscara circular: True = mantener bajas frecuencias (centro)
+    #  1. FFT 2D 
+    f = np.fft.fft2(matriz)
+    fshift = np.fft.fftshift(f)
+    fshift_abs = np.abs(fshift)
+    espectro_log = np.log10(1 + fshift_abs)        
+    #  2. FILTRO PASA-BAJO (elimina frecuencias altas) 
+
+    rows, cols = matriz.shape
+    crow, ccol = rows // 2, cols // 2
 
 
-y, x = np.ogrid[:rows, :cols]
-distancia = np.sqrt((y - crow)**2 + (x - ccol)**2)
-mascara = distancia <= radio                     # ←←← PASA-BAJO
-# Aplicar filtro
+    radio = 25          
+    # radio pequeño (10-40)  → elimina muchas altas frecuencias (suavizado fuerte)
+    # radio grande (80-150)  → elimina solo las muy altas (suavizado suave, conserva más detalle)
+    # Máscara circular: True = mantener bajas frecuencias (centro)
 
-fshift_filtrado = fshift * mascara
-#  3. INVERSA FFT 
 
-f_ishift = np.fft.ifftshift(fshift_filtrado)
-imagen_filtrada = np.fft.ifft2(f_ishift)
-imagen_filtrada = np.real(imagen_filtrada)       # usamos real() porque la parte imaginaria es ~0
+    y, x = np.ogrid[:rows, :cols]
+    distancia = np.sqrt((y - crow)**2 + (x - ccol)**2)
+    mascara = distancia <= radio                     # ←←← PASA-BAJO
+    # Aplicar filtro
 
-plot_fft = False 
-if plot_fft:
-    #  VISUALIZACIÓN 
-    plt.figure(figsize=(16, 10))
+    fshift_filtrado = fshift * mascara
+    #  3. INVERSA FFT 
 
-    plt.subplot(2, 3, 1)
-    plt.imshow(matriz, cmap='gray', vmin=matriz.min(), vmax=matriz.max())
-    plt.title('Original (canal 2)')
-    plt.colorbar()
+    f_ishift = np.fft.ifftshift(fshift_filtrado)
+    imagen_filtrada = np.fft.ifft2(f_ishift)
+    imagen_filtrada = np.real(imagen_filtrada)       # usamos real() porque la parte imaginaria es ~0
 
-    plt.subplot(2, 3, 2)
-    plt.imshow(espectro_log, cmap='gray')
-    plt.title('Espectro de Fourier (log)')
-    plt.colorbar()
+    plot_fft = False 
+    if plot_fft:
+        #  VISUALIZACIÓN 
+        plt.figure(figsize=(16, 10))
 
-    plt.subplot(2, 3, 3)
-    plt.imshow(mascara, cmap='gray')
-    plt.title(f'Máscara PASA-BAJO\n(Radio = {radio} píxeles)')
-    plt.colorbar()
+        plt.subplot(2, 3, 1)
+        plt.imshow(matriz, cmap='gray', vmin=matriz.min(), vmax=matriz.max())
+        plt.title('Original (canal 2)')
+        plt.colorbar()
 
-    plt.subplot(2, 3, 4)
-    plt.imshow(imagen_filtrada, cmap='gray')
-    plt.title('IMAGEN FILTRADA\n(frecuencias altas eliminadas)')
-    plt.colorbar()
+        plt.subplot(2, 3, 2)
+        plt.imshow(espectro_log, cmap='gray')
+        plt.title('Espectro de Fourier (log)')
+        plt.colorbar()
 
-    plt.subplot(2, 3, 5)
-    plt.imshow(matriz - imagen_filtrada, cmap='gray')
-    plt.title('Diferencia (solo altas frecuencias removidas)')
-    plt.colorbar()
+        plt.subplot(2, 3, 3)
+        plt.imshow(mascara, cmap='gray')
+        plt.title(f'Máscara PASA-BAJO\n(Radio = {radio} píxeles)')
+        plt.colorbar()
 
-    plt.subplot(2, 3, 6)
-    plt.imshow(np.log10(1 + np.abs(fshift - fshift_filtrado)), cmap='gray')
-    plt.title('Espectro removido (solo altas frecuencias)')
-    plt.colorbar()
+        plt.subplot(2, 3, 4)
+        plt.imshow(imagen_filtrada, cmap='gray')
+        plt.title('IMAGEN FILTRADA\n(frecuencias altas eliminadas)')
+        plt.colorbar()
 
-    plt.tight_layout()
-    plt.show()
+        plt.subplot(2, 3, 5)
+        plt.imshow(matriz - imagen_filtrada, cmap='gray')
+        plt.title('Diferencia (solo altas frecuencias removidas)')
+        plt.colorbar()
 
-    #  PERFIL DE COMPARACIÓN 
-    col = offset                     
-    plt.figure(figsize=(12, 5))
-    plt.plot(matriz[:, col], label='Original', linewidth=1.5)
-    plt.plot(imagen_filtrada[:, col], label=f'Filtrada pasa-bajo (radio={radio})', linewidth=2)
-    plt.title('Perfil vertical central - Original vs Filtrada')
-    plt.xlabel('Fila')
+        plt.subplot(2, 3, 6)
+        plt.imshow(np.log10(1 + np.abs(fshift - fshift_filtrado)), cmap='gray')
+        plt.title('Espectro removido (solo altas frecuencias)')
+        plt.colorbar()
+
+        plt.tight_layout()
+        plt.show()
+
+        #  PERFIL DE COMPARACIÓN 
+        col = offset                     
+        plt.figure(figsize=(12, 5))
+        plt.plot(matriz[:, col], label='Original', linewidth=1.5)
+        plt.plot(imagen_filtrada[:, col], label=f'Filtrada pasa-bajo (radio={radio})', linewidth=2)
+        plt.title('Perfil vertical central - Original vs Filtrada')
+        plt.xlabel('Fila')
+        plt.ylabel('Intensidad')
+        plt.legend()
+        plt.grid(True, alpha=0.3)
+        plt.show()
+
+
+    col = offset 
+    perfil_difraccion =  imagen_filtrada[:, col]
+
+    #  FIND_PEAKS (versión mejorada) ======================
+    peaks, properties = find_peaks(
+        perfil_difraccion,
+        height      = np.max(perfil_difraccion) * 0.03, 
+        distance    = 30,                               
+        prominence  = np.max(perfil_difraccion) * 0.03, 
+        width       = None                              
+    )
+
+
+    if len(peaks) >= 2:
+        pasos = np.diff(peaks.astype(float))          # diferencias en píxeles (float para precisión)
+        paso_promedio = np.mean(pasos)
+        paso_std      = np.std(pasos)
+        paso_min      = np.min(pasos)
+        paso_max      = np.max(pasos)
+        
+
+        centro_recorte = offset                     
+        idx_central = np.argmin(np.abs(peaks - centro_recorte))
+        pico_central = peaks[idx_central]
+        
+
+        ordenes = np.arange(-idx_central, len(peaks) - idx_central)
+        
+
+        coef = np.polyfit(ordenes, peaks, 1)
+        paso_fit = coef[0]
+
+
+    if len(peaks) > 1:
+        pasos = np.diff(peaks)                              # diferencias consecutivas
+        paso_promedio = np.mean(pasos)
+        paso_std   = np.std(pasos)
+
+
+        # Posiciones relativas al centro (para ver órdenes m = 0, ±1, ±2...)
+        centro = offset                                 # índice 500 en el perfil de 1000 píxeles
+        ordenes_relativos = peaks - centro
+
+    else:
+        print("¡No hay suficientes picos para calcular el paso!")
+
+    # ================== COMPLETAR ESTOS DATOS (del láser y de tu cámara) ==================
+    lambda_laser_nm = 650          # ←←← CAMBIÁ: longitud de onda en nm (ej: 650 rojo, 532 verde, 632.8 HeNe)
+    pixel_size_um   = 5.2          # ←←← CAMBIÁ: tamaño real de cada píxel de la cámara en micrómetros
+                                # (mirá la ficha técnica de tu cámara/webcam/CCD o calibrá con una regla)
+    D = 0.5125                        # metros (ya dado)
+    # ====================================================================================
+
+    lambda_m = lambda_laser_nm * 1e-9
+    pixel_size_m = pixel_size_um * 1e-6
+
+    delta_y = paso_promedio * pixel_size_m          # paso en metros
+
+    a = (lambda_m * D) / delta_y                 # ancho de la rendija en metros
+    a_um = a * 1e6                               # en micrómetros (más cómodo)
+
+
+    print("\n=== RESULTADO: ANCHO DE LA RENDIJA ===")
+    print(f"λ = {lambda_laser_nm} nm")
+    print(f"Pixel size = {pixel_size_um} µm")
+    print(f"Paso medio = {paso_promedio:.2f} píxeles → {delta_y*1000:.3f} mm")
+    print(f"a = {a:.2e} m  =  {a_um:.1f} µm")
+
+    # ====================== GRÁFICO CON RESULTADO INCLUIDO ======================
+    plt.figure(figsize=(14, 7))
+    plt.plot(perfil_difraccion, linewidth=2.5, color='tab:blue', label='Perfil filtrado')
+    plt.plot(matriz[:, col], label='Original', alpha=0.3, color =  "Black")
+    plt.plot(peaks, perfil_difraccion[peaks], "x", markersize=14, color='red', label='Picos')
+
+    for i in range(len(peaks)-1):
+        x_mid = (peaks[i] + peaks[i+1]) / 2
+        dist = pasos[i]
+        plt.annotate('', xy=(peaks[i], perfil_difraccion[peaks[i]]*0.85),
+                    xytext=(peaks[i+1], perfil_difraccion[peaks[i]]*0.85),
+                    arrowprops=dict(arrowstyle='<->', color='darkgreen', lw=2))
+        plt.text(x_mid, perfil_difraccion[peaks[i]]*0.92,
+                f'{dist:.0f} px', ha='center', fontsize=11, color='darkgreen')
+
+    plt.axvline(centro, color='gray', ls='--', alpha=0.6)
+    plt.xlabel('Fila (píxeles)')
     plt.ylabel('Intensidad')
     plt.legend()
     plt.grid(True, alpha=0.3)
+    plt.tight_layout()
     plt.show()
-
-
-col = offset 
-perfil_difraccion =  imagen_filtrada[:, col]
-
-#  FIND_PEAKS (versión mejorada) ======================
-peaks, properties = find_peaks(
-    perfil_difraccion,
-    height      = np.max(perfil_difraccion) * 0.03, 
-    distance    = 30,                               
-    prominence  = np.max(perfil_difraccion) * 0.03, 
-    width       = None                              
-)
-
-
-if len(peaks) >= 2:
-    pasos = np.diff(peaks.astype(float))          # diferencias en píxeles (float para precisión)
-    paso_promedio = np.mean(pasos)
-    paso_std      = np.std(pasos)
-    paso_min      = np.min(pasos)
-    paso_max      = np.max(pasos)
-    
-    print(f"✅ Paso promedio entre picos consecutivos: {paso_promedio:.2f} ± {paso_std:.2f} píxeles")
-    print(f"   Mínimo paso: {paso_min:.1f} px  |  Máximo paso: {paso_max:.1f} px")
-    
-    # Pico central (orden m=0) → el más cercano al centro del recorte
-
-    centro_recorte = offset                     
-    idx_central = np.argmin(np.abs(peaks - centro_recorte))
-    pico_central = peaks[idx_central]
-    
-    print(f"   Pico central (m=0) en fila: {pico_central} (distancia al centro del recorte: {abs(pico_central - centro_recorte)} px)")
-    
-    # Asignar órdenes m (izquierda = negativos, derecha = positivos)
-    ordenes = np.arange(-idx_central, len(peaks) - idx_central)
-    
-    print("\nTabla completa (orden m → posición → intensidad):")
-    for m, pos, inten in zip(ordenes, peaks, perfil_difraccion[peaks]):
-        print(f"  m = {m:3d}  →  fila {pos:4d}  →  I = {inten:.0f}")
-    
-    # ====================== GRÁFICO DEL PASO (linealidad del patrón) ======================
-    plt.figure(figsize=(12, 6))
-    
-    # Posición vs Orden (debe ser una recta perfecta en difracción ideal)
-    plt.subplot(1, 2, 1)
-    plt.plot(ordenes, peaks, 'o-', color='tab:red', markersize=8, linewidth=2.5, label='Posiciones medidas')
-    
-    # Ajuste lineal (pendiente = paso promedio)
-    coef = np.polyfit(ordenes, peaks, 1)
-    paso_fit = coef[0]
-    plt.plot(ordenes, coef[0]*ordenes + coef[1], '--', color='black', label=f'Ajuste lineal\npaso = {paso_fit:.2f} px/orden')
-    
-    plt.xlabel('Orden de difracción m')
-    plt.ylabel('Posición en la imagen (píxeles)')
-    plt.title('Verificación de linealidad del patrón\n(Paso constante)')
-    plt.grid(True, alpha=0.3)
-    plt.legend()
-    
-    # Perfil con picos y flechas de paso
-    plt.subplot(1, 2, 2)
-    plt.plot(matriz[:, col], label='Original', alpha=0.5)
-    plt.plot(perfil_difraccion, color='tab:blue', linewidth=2.5, label='Perfil filtrado')
-    plt.plot(peaks, perfil_difraccion[peaks], "x", markersize=12, color='red', label='Picos')
-    plt.show()
-
-if len(peaks) > 1:
-    pasos_pixeles = np.diff(peaks)                              # diferencias consecutivas
-    paso_medio = np.mean(pasos_pixeles)
-    paso_std   = np.std(pasos_pixeles)
-
-    print("\n=== PASO ENTRE PICOS ===")
-    print(f"Pasos individuales (píxeles): {pasos_pixeles}")
-    print(f"→ Paso medio: {paso_medio:.2f} ± {paso_std:.2f} píxeles")
-
-    # Posiciones relativas al centro (para ver órdenes m = 0, ±1, ±2...)
-    centro = offset                                 # índice 500 en el perfil de 1000 píxeles
-    ordenes_relativos = peaks - centro
-    print(f"Órdenes aproximados (relativo al centro): {ordenes_relativos}")
-
-else:
-    print("¡No hay suficientes picos para calcular el paso!")
-
-# ================== COMPLETAR ESTOS DATOS (del láser y de tu cámara) ==================
-lambda_laser_nm = 650          # ←←← CAMBIÁ: longitud de onda en nm (ej: 650 rojo, 532 verde, 632.8 HeNe)
-pixel_size_um   = 5.2          # ←←← CAMBIÁ: tamaño real de cada píxel de la cámara en micrómetros
-                               # (mirá la ficha técnica de tu cámara/webcam/CCD o calibrá con una regla)
-D = 0.5125                        # metros (ya dado)
-# ====================================================================================
-
-lambda_m = lambda_laser_nm * 1e-9
-pixel_size_m = pixel_size_um * 1e-6
-
-delta_y = paso_medio * pixel_size_m          # paso en metros
-
-a = (lambda_m * D) / delta_y                 # ancho de la rendija en metros
-a_um = a * 1e6                               # en micrómetros (más cómodo)
-
-
-print("\n=== RESULTADO: ANCHO DE LA RENDIJA ===")
-print(f"λ = {lambda_laser_nm} nm")
-print(f"Pixel size = {pixel_size_um} µm")
-print(f"Paso medio = {paso_medio:.2f} píxeles → {delta_y*1000:.3f} mm")
-print(f"a = {a:.2e} m  =  {a_um:.1f} µm")
-
-# ====================== GRÁFICO CON RESULTADO INCLUIDO ======================
-plt.figure(figsize=(14, 7))
-plt.plot(perfil_difraccion, linewidth=2.5, color='tab:blue', label='Perfil filtrado')
-
-plt.plot(peaks, perfil_difraccion[peaks], "x", markersize=14, color='red', label='Picos')
-
-for i in range(len(peaks)-1):
-    x_mid = (peaks[i] + peaks[i+1]) / 2
-    dist = pasos_pixeles[i]
-    plt.annotate('', xy=(peaks[i], perfil_difraccion[peaks[i]]*0.85),
-                 xytext=(peaks[i+1], perfil_difraccion[peaks[i]]*0.85),
-                 arrowprops=dict(arrowstyle='<->', color='darkgreen', lw=2))
-    plt.text(x_mid, perfil_difraccion[peaks[i]]*0.92,
-             f'{dist:.0f} px', ha='center', fontsize=11, color='darkgreen')
-
-plt.axvline(centro, color='gray', ls='--', alpha=0.6)
-plt.title(f'Patrón de difracción + Ancho de rendija = {a_um:.1f} µm\n(D = 0.5 m | λ = {lambda_laser_nm} nm)')
-plt.xlabel('Fila (píxeles)')
-plt.ylabel('Intensidad')
-plt.legend()
-plt.grid(True, alpha=0.3)
-plt.tight_layout()
-plt.show()
 
 
 plot_fft_1D = False 
