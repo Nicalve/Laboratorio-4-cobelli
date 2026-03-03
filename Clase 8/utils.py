@@ -20,9 +20,12 @@ def preparar_roi(imagen,center_x=890, center_y=1645, offset=650, canal=2): # (Re
     crow, ccol = rows//2, cols//2
 
     y, x = np.ogrid[:rows, :cols]
-    kx = x - ccol
+    kx = x - ccol #valores centrados
     ky = y - crow
+    #kx2 = np.array([])
+    #ky2= np.array([])
     distancia = np.sqrt(kx**2 + ky**2)
+   # distancia_lobulo_principal = np.sqrt(kx2**2+ky2**2)
 
     return {
         "matriz": matriz,

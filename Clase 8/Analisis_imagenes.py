@@ -1,3 +1,6 @@
+#%%
+
+
 import imageio.v2 as imageio
 import matplotlib.pyplot as plt 
 from pathlib import Path
@@ -9,7 +12,7 @@ from scipy.signal import find_peaks
 from scipy.optimize import curve_fit
 from utils import *
 
-ROOT = Path(r"C:\Users\User\Desktop\Laboratorio-4-cobelli\Clase 8\young _2\aluminium_")
+ROOT = Path(r"Clase 8/young _2/aluminium_")
 
 
 extensiones_validas = ('.tif', '.tiff', '.png', '.jpg', '.jpeg')
@@ -30,12 +33,88 @@ if not images:
     exit()
 
 
-indexacions = np.arange(1,11)
+import numpy as np
+import matplotlib.pyplot as plt
+
+# ====================== CONSTANTES CALIBRADAS ======================
+lambda_nm = 650
+lambda_m  = lambda_nm * 1e-9               # 6.50e-7 m
+
+px_por_mm = 23.87
+pixel_size_um = 1000 / px_por_mm           # ≈ 41.8936 µm/píxel
+pixel_size_m  = pixel_size_um * 1e-6       # ≈ 4.189e-5 m/píxel
+
+D_m = 0.5125
+err_D_m = 0.01
+
+# ====================== PREPARAR ROI (tu función) ======================
+roi = preparar_roi(images[1], center_x=890, center_y=1645, offset=650, canal=2)
+matriz = roi['matriz'].astype(float)       # Aseguramos float para FFT
+
+# Restamos la media (mejora contraste en log)
+matriz_detrend = matriz - np.mean(matriz)
+
+# ====================== FFT + SHIFT ======================
+f = np.fft.fft2(matriz_detrend)
+fshift = np.fft.fftshift(f)
+
+# Magnitud + log para visualización
+espectro_log = np.log10(1 + np.abs(fshift))   # +1 evita log(0)
+
+# ====================== CALIBRACIÓN DE EJES EN k (rad/m) ======================
+Ny, Nx = matriz.shape
+
+dx = pixel_size_m               # espaciado espacial en metros
+dkx = 2 * np.pi / (Nx * dx)     # paso en frecuencia espacial (rad/m)    #esta bien!
+dky = 2 * np.pi / (Ny * dx)     # igual en y (asumimos píxeles cuadrados)
+
+# Rangos centrados en 0
+kx = np.linspace(-np.pi / dx, np.pi / dx, Nx, endpoint=False)
+ky = np.linspace(-np.pi / dx, np.pi / dx, Ny, endpoint=False)
+
+# ====================== VISUALIZACIÓN CALIBRADA ======================
+plt.figure(figsize=(10, 8))
+
+# Espectro log con ejes en k (rad/m)
+plt.imshow(espectro_log,
+           extent=[kx[0], kx[-1], ky[0], ky[-1]],
+           origin='lower',
+           cmap='viridis',           # o 'hot', 'magma', 'plasma'
+           aspect='auto')
+
+plt.colorbar(label='log₁₀(1 + |F(k)|)')
+plt.xlabel('kₓ  (rad/m)')
+plt.ylabel('kᵧ  (rad/m)')
+plt.title('Espectro de Fourier 2D calibrado\n'
+          f'(pixel size = {pixel_size_um:.3f} µm, λ = {lambda_nm} nm)')
+
+# Líneas de referencia útiles
+plt.axvline(0, color='white', lw=0.8, alpha=0.6, linestyle='--')
+plt.axhline(0, color='white', lw=0.8, alpha=0.6, linestyle='--')
+
+# Opcional: marcar el radio correspondiente a la longitud de onda
+# (distancia entre órdenes m=±1 en k = 2π / d, donde d es espaciado de rendija)
+plt.show()
+
+# ====================== VALORES ÚTILES PARA IMPRIMIR ======================
+k_nyquist = np.pi / dx
+print(f"Pixel size espacial:     {pixel_size_m:.2e} m/píxel")
+print(f"Frecuencia Nyquist:      {k_nyquist:.2e} rad/m  ({k_nyquist/(2*np.pi):.2e} ciclos/m)")
+print(f"Longitud de onda λ:      {lambda_m:.2e} m")
+print(f"k correspondiente a λ:   {2*np.pi / lambda_m:.2e} rad/m")
+print(f"Resolución angular aproximada (λ/D): {lambda_m / D_m:.2e} rad")
+
+#%%
+
+
+
+
+indexacions = np.arange(1,1)
 rendijas = []
 err_rendijas = []
 for i in range(len(indexacions)):
     roi =  preparar_roi(images[1+3*i],center_x=890, center_y=1645, offset=650, canal=2)
-    pasos, paso_mean, paso_std, param, imagen_filtrada, mascara, peaks = ajustar_filtro_eliptico_ml(roi)
+    pasos, paso_mean, paso_std, param, imagen_filtrada, mascara, peaks = ajustar_filtro_circular_ml(roi)
 
     # visualizar_resultado_filtrado(roi["matriz"],imagen_filtrada,mascara)
 
@@ -62,6 +141,8 @@ for i in range(len(indexacions)):
     lambda_laser_nm = 650
     err_lambda_nm = 0                   #falta
 
+
+    #conversiones
     px_por_mm = 23.87
     #err_px_mm = 
     distancia_cuadradito = 1000

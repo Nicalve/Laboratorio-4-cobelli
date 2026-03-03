@@ -1,4 +1,4 @@
-import imageio.v2 as imageio
+import imageio.v2 as imgaeio
 import matplotlib.pyplot as plt 
 from pathlib import Path
 import numpy as np
@@ -7,7 +7,7 @@ from matplotlib.colors import SymLogNorm
 import os
 from scipy.signal import find_peaks
 
-ROOT = Path(r"C:\Users\User\Desktop\Laboratorio-4-cobelli\Clase 8\young _2\aluminium_")
+ROOT = Path(r"C/home/Estudiante/Laboratorio-4-cobelli/Clase 8/young _2/aluminium_")
 extensiones_validas = ('.tif', '.tiff', '.png', '.jpg', '.jpeg')
 archivos = [f for f in os.listdir(ROOT) if f.lower().endswith(extensiones_validas)]
 # archivos.sort()  # opcional, para orden alfabético
